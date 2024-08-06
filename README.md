@@ -1,8 +1,7 @@
-# TripTune
+# TripTune - OpenAPI
 
 ## 프로젝트 개요
 
-TripTune-OpenAPI
 함께 여행계획을 작성하는 웹프로젝트 Open API 활용
 
 ### 파일 구조
