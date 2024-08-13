@@ -52,7 +52,7 @@ def korea_city_code(secret_key, base_url):
     print("city 데이터 저장 완료")
     conn.commit()
 
-    
+
 
 def get_json_data(url, params):
     # parameter 인코딩 후 데이터 요청
@@ -65,6 +65,56 @@ def get_json_data(url, params):
     else:
         print(f"요청 실패: 상태코드 {response.status_code}")
         return
+
+
+def korea_district_code(secret_key, base_url):
+    suffix = "/areaCode1"
+    url = base_url + suffix
+
+    params = {
+        "serviceKey": secret_key,
+        "numOfRows": 10,
+        "pageNo": 1,
+        "MobileOS": "ETC",
+        "MobileApp": "TripTune",
+        "_type": "json",
+    }
+
+    select_city = "SELECT city_id, api_area_code FROM city"
+
+    cursor.execute(select_city)
+    cities = cursor.fetchall()
+
+    for city in cities:
+        city_id = city[0]
+        params["areaCode"] = city[1]
+        
+        # 전체 갯수 조회
+        content = get_json_data(url, params)
+        total_count = content["response"]["body"]["totalCount"]
+
+        pageNo = 0
+
+        while pageNo * 10 < total_count:
+            pageNo += 1
+            params["pageNo"] = pageNo
+
+            content = get_json_data(url, params)
+            print(content)
+
+            items = content["response"]["body"]["items"]["item"]
+
+            for item in items:
+                area_code = item["code"]
+                district_name = item["name"]
+
+                insert_district = "INSERT INTO district(city_id, api_area_code, district_name) VALUES (%s, %s, %s)"
+                cursor.execute(insert_district, (city_id, area_code, district_name))
+        
+    print("district 데이터 저장 완료")
+    conn.commit()   
+
+
 
 
 def main():
@@ -96,7 +146,8 @@ def main():
 
     cursor = conn.cursor()
 
-    korea_city_code(secret_key, base_url)
+    # korea_city_code(secret_key, base_url)
+    korea_district_code(secret_key, base_url)
    
     conn.close()
 
@@ -104,10 +155,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-
-
-
-
-
