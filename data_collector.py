@@ -1,15 +1,9 @@
-import requests
-import urllib
-import os
-import json
-import pymysql
-from dotenv import load_dotenv
+from api_handler import get_json_data
+from db_handler import DatabaseHandler
 
 
-conn = None
-cursor = None
 
-def korea_city_code(secret_key, base_url):
+def korea_city_code(db, secret_key, base_url):
     suffix = "/areaCode1"
     url = base_url + suffix
 
@@ -22,14 +16,13 @@ def korea_city_code(secret_key, base_url):
         "_type": "json",
     }
 
-    # 전체 갯수 조회
+    # 전체 갯수 조회s
     content = get_json_data(url, params)
     total_count = content["response"]["body"]["totalCount"]
 
     # DB 에 저장된 나라 id 조회
     select_country = "SELECT country_id FROM country WHERE country_name = '대한민국'"
-    cursor.execute(select_country)
-    country_id = cursor.fetchone()[0]
+    country_id = db.execute_select_one(select_country)[0]
 
     pageNo = 0
 
@@ -47,27 +40,14 @@ def korea_city_code(secret_key, base_url):
             city_name = item["name"]
 
             insert_city = "INSERT INTO city(country_id, api_area_code, city_name) VALUES (%s, %s, %s)"
-            cursor.execute(insert_city, (country_id, area_code, city_name))
+            db.execute_insert(insert_city, (country_id, area_code, city_name))
 
     print("city 데이터 저장 완료")
-    conn.commit()
 
 
 
-def get_json_data(url, params):
-    # parameter 인코딩 후 데이터 요청
-    encoding_params = urllib.parse.urlencode(params, safe='#\':()+=%,')
 
-    response = requests.get(url, params=encoding_params)
-
-    if response.status_code == 200:
-        return response.json()
-    else:
-        print(f"요청 실패: 상태코드 {response.status_code}")
-        return
-
-
-def korea_district_code(secret_key, base_url):
+def korea_district_code(db, secret_key, base_url):
     suffix = "/areaCode1"
     url = base_url + suffix
 
@@ -81,9 +61,8 @@ def korea_district_code(secret_key, base_url):
     }
 
     select_city = "SELECT city_id, api_area_code FROM city"
-
-    cursor.execute(select_city)
-    cities = cursor.fetchall()
+    cities = db.execute_select_all(select_city)
+    
 
     for city in cities:
         city_id = city[0]
@@ -109,49 +88,7 @@ def korea_district_code(secret_key, base_url):
                 district_name = item["name"]
 
                 insert_district = "INSERT INTO district(city_id, api_area_code, district_name) VALUES (%s, %s, %s)"
-                cursor.execute(insert_district, (city_id, area_code, district_name))
+                db.execute_insert(insert_district, (city_id, area_code, district_name))
         
     print("district 데이터 저장 완료")
-    conn.commit()   
 
-
-
-
-def main():
-    global conn
-    global cursor
-
-    load_dotenv()
-
-    secret_key = os.getenv("SECRET_KEY")
-    base_url = os.getenv("BASE_URL")
-    db_host = os.getenv("DB_HOST")
-    db_user = os.getenv("DB_USERNAME")
-    db_password = os.getenv("DB_PASSWORD")
-    db_name = os.getenv("DB_NAME")
-    db_port = int(os.getenv("DB_PORT"))
-
-    if not all([secret_key, base_url, db_host, db_user, db_password, db_name, db_port]):
-        print("환경 변수 불러오기 실패")
-        return
-
-    conn = pymysql.connect(
-        host=db_host, 
-        user=db_user, 
-        password=db_password, 
-        db=db_name, 
-        port=db_port, 
-        charset="utf8"
-    )
-
-    cursor = conn.cursor()
-
-    # korea_city_code(secret_key, base_url)
-    korea_district_code(secret_key, base_url)
-   
-    conn.close()
-
-
-
-if __name__ == '__main__':
-    main()
