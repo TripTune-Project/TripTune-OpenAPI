@@ -22,7 +22,7 @@ def korea_city_code(db, secret_key, base_url):
 
     # DB 에 저장된 나라 id 조회
     select_country = "SELECT country_id FROM country WHERE country_name = '대한민국'"
-    country_id = db.execute_select_one(select_country)[0]
+    country_id = db.execute_select_one(select_country)["country_id"]
 
     pageNo = 0
 
@@ -65,8 +65,8 @@ def korea_district_code(db, secret_key, base_url):
     
 
     for city in cities:
-        city_id = city[0]
-        params["areaCode"] = city[1]
+        city_id = city["city_id"]
+        params["areaCode"] = city["api_area_code"]
         
         # 전체 갯수 조회
         content = get_json_data(url, params)
@@ -148,8 +148,8 @@ def korea_category2_code(db, secret_key, base_url):
     large_categoris = db.execute_select_all(select_large_category)
 
     for category in large_categoris:
-        large_category_id = category[0]
-        params["cat1"] = category[2]
+        large_category_id = category["large_category_id"]
+        params["cat1"] = category["api_cat1_code"]
 
         content = get_json_data(url, params)
         total_count = content["response"]["body"]["totalCount"]
@@ -193,13 +193,13 @@ def korea_category3_code(db, secret_key, base_url):
                                 FROM api_middle_category amc
                                 JOIN api_large_category alc
                                 ON amc.large_category_id = alc.large_category_id'''
-                                
+
     middle_categories = db.execute_select_all(select_middle_category)
 
     for category in middle_categories:
-        middle_category_id = category[0]
-        params["cat1"] = category[3]
-        params["cat2"] = category[1]
+        middle_category_id = category["middle_category_id"]
+        params["cat1"] = category["api_cat1_code"]
+        params["cat2"] = category["api_cat2_code"]
 
         content = get_json_data(url, params)
         total_count = content["response"]["body"]["totalCount"]
