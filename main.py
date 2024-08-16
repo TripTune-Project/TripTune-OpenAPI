@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 from db_handler import DatabaseHandler
-from data_collector import korea_city_code, korea_district_code
+from data_collector import *
 
 
 def main():
@@ -23,8 +23,11 @@ def main():
     db = DatabaseHandler(db_host, db_user, db_password, db_name, db_port)
     
     try:
-        korea_city_code(db, secret_key, base_url)
-        korea_district_code(db, secret_key, base_url)
+        # korea_city_code(db, secret_key, base_url)
+        # korea_district_code(db, secret_key, base_url)
+        # korea_category1_code(db, secret_key, base_url)
+        # korea_category2_code(db, secret_key, base_url)
+        korea_category3_code(db, secret_key, base_url)
     finally:
         db.close()
 
