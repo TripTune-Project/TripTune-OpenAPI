@@ -1,6 +1,21 @@
 from api_handler import *
 from db_handler import DatabaseHandler
 
+'''
+> 컨텐츠 타입 변수명
+관광지: tourist
+문화시설: cultural
+축제공연행사: festival
+여행코스: travel_course
+레포츠: leports
+숙박: accommodation
+쇼핑: shopping
+음식점: restaurants
+'''
+
+content_types = [{"tourist": "12"}, {"cultural": "14"}, {"festival": "15"}, {"travel_course": "25"}, {"leports": "28"}, 
+{"accommodation": "32"}, {"shopping": "38"}, {"restaurants": "39"}]
+
 
 def korea_city_code(db, secret_key, base_url):
     url = base_url + "/areaCode1"
@@ -69,6 +84,7 @@ def korea_district_code(db, secret_key, base_url):
 
 
 
+
 def korea_category1_code(db, secret_key, base_url):
     url = base_url + "/categoryCode1"
 
@@ -88,10 +104,10 @@ def korea_category1_code(db, secret_key, base_url):
         category_code = item["code"]
         category_name = item["name"]
 
-        insert_large_category = "INSERT INTO api_large_category(api_cat1_code, large_category_name) VALUES (%s, %s)"
-        db.execute_insert(insert_large_category, (category_code, category_name))
+        insert_category = "INSERT INTO api_category(category_code, category_name, level) VALUES (%s, %s, %s)"
+        db.execute_insert(insert_category, (category_code, category_name, 1))
 
-    print("대분류 카테고리(cat1) 데이터 저장 완료")
+    print("카테고리(cat1) 데이터 저장 완료")
 
 
 
@@ -107,12 +123,13 @@ def korea_category2_code(db, secret_key, base_url):
         "_type": "json"
     }
 
-    select_large_category = "SELECT * FROM api_large_category"
-    large_categoris = db.execute_select_all(select_large_category)
+    # 부모 카데고리 조회
+    select_category1 = "SELECT * FROM api_category WHERE LEVEL = 1"
+    categoris = db.execute_select_all(select_category1)
 
-    for category in large_categoris:
-        large_category_id = category["large_category_id"]
-        params["cat1"] = category["api_cat1_code"]
+    for category in categoris:
+        cat1_code = category["category_code"]
+        params["cat1"] = cat1_code
 
         total_count = get_total_count(url, params)
         items = fetch_items(url, params, total_count)
@@ -121,10 +138,10 @@ def korea_category2_code(db, secret_key, base_url):
             category_code = item["code"]
             category_name = item["name"]
 
-            insert_middle_category = "INSERT INTO api_middle_category(large_category_id, api_cat2_code, middle_category_name) VALUES (%s, %s, %s)"
-            db.execute_insert(insert_middle_category, (large_category_id, category_code, category_name))
+            insert_category = "INSERT INTO api_category(category_code, category_name, parent_code, level) VALUES (%s, %s, %s, %s)"
+            db.execute_insert(insert_category, (category_code, category_name, parent_code, 2))
 
-    print("중분류 카테고리(cat2) 데이터 저장 완료")
+    print("카테고리(cat2) 데이터 저장 완료")
 
 
 
@@ -140,18 +157,15 @@ def korea_category3_code(db, secret_key, base_url):
         "_type": "json"
     }
 
-    select_middle_category = '''SELECT amc.middle_category_id, amc.api_cat2_code, amc.large_category_id, alc.api_cat1_code
-                                FROM api_middle_category amc
-                                JOIN api_large_category alc
-                                ON amc.large_category_id = alc.large_category_id'''
-
-    middle_categories = db.execute_select_all(select_middle_category)
+    # 부모 카데고리 조회
+    select_category2 = "SELECT * FROM api_category WHERE LEVEL = 2"
+    categoris = db.execute_select_all(select_category2)
 
 
-    for category in middle_categories:
-        middle_category_id = category["middle_category_id"]
-        params["cat1"] = category["api_cat1_code"]
-        params["cat2"] = category["api_cat2_code"]
+    for category in categoris:
+        cat2_code = category["category_code"]
+        params["cat1"] = category["parent_code"]
+        params["cat2"] = cat2_code
 
         total_count = get_total_count(url, params)
         items = fetch_items(url, params, total_count)
@@ -160,10 +174,10 @@ def korea_category3_code(db, secret_key, base_url):
             category_code = item["code"]
             category_name = item["name"]
 
-            insert_small_category = "INSERT INTO api_small_category(middle_category_id, api_cat3_code, small_category_name) VALUES (%s, %s, %s)"
-            db.execute_insert(insert_small_category, (middle_category_id, category_code, category_name))
+            insert_category = "INSERT INTO api_category(category_code, category_name, parent_code, level) VALUES (%s, %s, %s, %s)"
+            db.execute_insert(insert_category, (category_code, category_name, cat2_code, 3))
 
-    print("중분류 카테고리(cat3) 데이터 저장 완료")
+    print("카테고리(cat3) 데이터 저장 완료")
         
 
 
