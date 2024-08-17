@@ -1,11 +1,9 @@
-from api_handler import get_json_data
+from api_handler import *
 from db_handler import DatabaseHandler
 
 
-
 def korea_city_code(db, secret_key, base_url):
-    suffix = "/areaCode1"
-    url = base_url + suffix
+    url = base_url + "/areaCode1"
 
     params = {
         "serviceKey": secret_key,
@@ -17,39 +15,27 @@ def korea_city_code(db, secret_key, base_url):
     }
 
     # 전체 갯수 조회
-    content = get_json_data(url, params)
-    total_count = content["response"]["body"]["totalCount"]
+    total_count = get_total_count(url, params)
 
     # DB 에 저장된 나라 id 조회
     select_country = "SELECT country_id FROM country WHERE country_name = '대한민국'"
     country_id = db.execute_select_one(select_country)["country_id"]
 
-    pageNo = 0
+    items = fetch_items(url, params, total_count)
 
-    while pageNo * 10 < total_count:
-        pageNo += 1
-        params["pageNo"] = pageNo
+    for item in items:
+        area_code = item["code"]
+        city_name = item["name"]
 
-        content = get_json_data(url, params)
-        print(content)
-
-        items = content["response"]["body"]["items"]["item"]
-
-        for item in items:
-            area_code = item["code"]
-            city_name = item["name"]
-
-            insert_city = "INSERT INTO city(country_id, api_area_code, city_name) VALUES (%s, %s, %s)"
-            db.execute_insert(insert_city, (country_id, area_code, city_name))
+        insert_city = "INSERT INTO city(country_id, api_area_code, city_name) VALUES (%s, %s, %s)"
+        db.execute_insert(insert_city, (country_id, area_code, city_name))
 
     print("city 데이터 저장 완료")
 
 
 
-
 def korea_district_code(db, secret_key, base_url):
-    suffix = "/areaCode1"
-    url = base_url + suffix
+    url = base_url + "/areaCode1"
 
     params = {
         "serviceKey": secret_key,
@@ -69,34 +55,22 @@ def korea_district_code(db, secret_key, base_url):
         params["areaCode"] = city["api_area_code"]
         
         # 전체 갯수 조회
-        content = get_json_data(url, params)
-        total_count = content["response"]["body"]["totalCount"]
+        total_count = get_total_count(url, params)
+        items = fetch_items(url, params, total_count)
 
-        pageNo = 0
+        for item in items:
+            sigungu_code = item["code"]
+            district_name = item["name"]
 
-        while pageNo * 10 < total_count:
-            pageNo += 1
-            params["pageNo"] = pageNo
-
-            content = get_json_data(url, params)
-            print(content)
-
-            items = content["response"]["body"]["items"]["item"]
-
-            for item in items:
-                sigungu_code = item["code"]
-                district_name = item["name"]
-
-                insert_district = "INSERT INTO district(city_id, api_sigungu_code, district_name) VALUES (%s, %s, %s)"
-                db.execute_insert(insert_district, (city_id, sigungu_code, district_name))
+            insert_district = "INSERT INTO district(city_id, api_sigungu_code, district_name) VALUES (%s, %s, %s)"
+            db.execute_insert(insert_district, (city_id, sigungu_code, district_name))
         
     print("district 데이터 저장 완료")
 
 
 
 def korea_category1_code(db, secret_key, base_url):
-    suffix = "/categoryCode1"
-    url = base_url + suffix
+    url = base_url + "/categoryCode1"
 
     params = {
         "serviceKey": secret_key,
@@ -107,33 +81,22 @@ def korea_category1_code(db, secret_key, base_url):
         "_type": "json"
     }
 
-    content = get_json_data(url, params)
-    total_count = content["response"]["body"]["totalCount"]
+    total_count = get_total_count(url, params)
+    items = fetch_items(url, params, total_count)
 
-    pageNo = 0
+    for item in items:
+        category_code = item["code"]
+        category_name = item["name"]
 
-    while pageNo * 10 < total_count:
-        pageNo += 1
-
-        content = get_json_data(url, params)
-        print(content)
-
-        items = content["response"]["body"]["items"]["item"]
-
-        for item in items:
-            category_code = item["code"]
-            category_name = item["name"]
-
-            insert_large_category = "INSERT INTO api_large_category(api_cat1_code, large_category_name) VALUES (%s, %s)"
-            db.execute_insert(insert_large_category, (category_code, category_name))
+        insert_large_category = "INSERT INTO api_large_category(api_cat1_code, large_category_name) VALUES (%s, %s)"
+        db.execute_insert(insert_large_category, (category_code, category_name))
 
     print("대분류 카테고리(cat1) 데이터 저장 완료")
 
 
 
 def korea_category2_code(db, secret_key, base_url):
-    suffix = "/categoryCode1"
-    url = base_url + suffix
+    url = base_url + "/categoryCode1"
 
     params = {
         "serviceKey": secret_key,
@@ -151,34 +114,22 @@ def korea_category2_code(db, secret_key, base_url):
         large_category_id = category["large_category_id"]
         params["cat1"] = category["api_cat1_code"]
 
-        content = get_json_data(url, params)
-        total_count = content["response"]["body"]["totalCount"]
+        total_count = get_total_count(url, params)
+        items = fetch_items(url, params, total_count)
+        
+        for item in items:
+            category_code = item["code"]
+            category_name = item["name"]
 
-        pageNo = 0
-
-        while pageNo * 10 < total_count:
-            pageNo += 1
-            params["pageNo"] = pageNo
-
-            content = get_json_data(url, params)
-            print(content)
-
-            items = content["response"]["body"]["items"]["item"]
-
-            for item in items:
-                category_code = item["code"]
-                category_name = item["name"]
-
-                insert_middle_category = "INSERT INTO api_middle_category(large_category_id, api_cat2_code, middle_category_name) VALUES (%s, %s, %s)"
-                db.execute_insert(insert_middle_category, (large_category_id, category_code, category_name))
+            insert_middle_category = "INSERT INTO api_middle_category(large_category_id, api_cat2_code, middle_category_name) VALUES (%s, %s, %s)"
+            db.execute_insert(insert_middle_category, (large_category_id, category_code, category_name))
 
     print("중분류 카테고리(cat2) 데이터 저장 완료")
 
 
 
 def korea_category3_code(db, secret_key, base_url):
-    suffix = "/categoryCode1"
-    url = base_url + suffix
+    url = base_url + "/categoryCode1"
 
     params = {
         "serviceKey": secret_key,
@@ -196,31 +147,21 @@ def korea_category3_code(db, secret_key, base_url):
 
     middle_categories = db.execute_select_all(select_middle_category)
 
+
     for category in middle_categories:
         middle_category_id = category["middle_category_id"]
         params["cat1"] = category["api_cat1_code"]
         params["cat2"] = category["api_cat2_code"]
 
-        content = get_json_data(url, params)
-        total_count = content["response"]["body"]["totalCount"]
+        total_count = get_total_count(url, params)
+        items = fetch_items(url, params, total_count)
 
-        pageNo = 0
+        for item in items:
+            category_code = item["code"]
+            category_name = item["name"]
 
-        while pageNo * 10 < total_count:
-            pageNo += 1
-            params["pageNo"] = pageNo
-
-            content = get_json_data(url, params)
-            print(content)
-
-            items = content["response"]["body"]["items"]["item"]
-
-            for item in items:
-                category_code = item["code"]
-                category_name = item["name"]
-
-                insert_small_category = "INSERT INTO api_small_category(middle_category_id, api_cat3_code, small_category_name) VALUES (%s, %s, %s)"
-                db.execute_insert(insert_small_category, (middle_category_id, category_code, category_name))
+            insert_small_category = "INSERT INTO api_small_category(middle_category_id, api_cat3_code, small_category_name) VALUES (%s, %s, %s)"
+            db.execute_insert(insert_small_category, (middle_category_id, category_code, category_name))
 
     print("중분류 카테고리(cat3) 데이터 저장 완료")
         

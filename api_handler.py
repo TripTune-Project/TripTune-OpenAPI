@@ -13,3 +13,25 @@ def get_json_data(url, params):
     else:
         print(f"요청 실패: 상태코드 {response.status_code}")
         return 
+
+
+
+def get_total_count(url, params):
+    content = get_json_data(url, params)
+    return content["response"]["body"]["totalCount"]
+
+
+
+def fetch_items(url, params, total_count):
+    items = []
+    iterations = (total_count - 1) // params["numOfRows"] + 2
+
+    for pageNo in range(1, iterations):
+        params["pageNo"] = pageNo
+        content = get_json_data(url, params)
+        
+
+        print(content)   
+        items.extend(content["response"]["body"]["items"]["item"])
+        
+    return items
