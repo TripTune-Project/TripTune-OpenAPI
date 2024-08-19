@@ -27,7 +27,9 @@ def main():
         # korea_district_code(db, secret_key, base_url)
         # korea_category1_code(db, secret_key, base_url)
         # korea_category2_code(db, secret_key, base_url)
-        korea_category3_code(db, secret_key, base_url)
+        # korea_category3_code(db, secret_key, base_url)
+        korea_area_based_list(db, secret_key, base_url)
+        
     finally:
         db.close()
 
