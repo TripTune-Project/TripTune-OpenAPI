@@ -31,7 +31,7 @@ def korea_city_code(db, secret_key, base_url):
         insert_city = "INSERT INTO city(country_id, api_area_code, city_name) VALUES (%s, %s, %s)"
         db.execute_insert(insert_city, (country_id, area_code, city_name))
 
-    print("city 데이터 저장 완료")
+    print("***city 데이터 저장 완료***")
 
 
 # 지역(시군구) 코드 조회 및 저장
@@ -66,7 +66,7 @@ def korea_district_code(db, secret_key, base_url):
             insert_district = "INSERT INTO district(city_id, api_sigungu_code, district_name) VALUES (%s, %s, %s)"
             db.execute_insert(insert_district, (city_id, sigungu_code, district_name))
         
-    print("district 데이터 저장 완료")
+    print("***district 데이터 저장 완료***")
 
 
 
@@ -93,7 +93,7 @@ def korea_category1_code(db, secret_key, base_url):
         insert_category = "INSERT INTO api_category(category_code, category_name, level) VALUES (%s, %s, %s)"
         db.execute_insert(insert_category, (category_code, category_name, 1))
 
-    print("카테고리(cat1) 데이터 저장 완료")
+    print("***카테고리(cat1) 데이터 저장 완료***")
 
 
 # 중분류 카테고리(cat2) 조회 및 저장
@@ -127,7 +127,7 @@ def korea_category2_code(db, secret_key, base_url):
             insert_category = "INSERT INTO api_category(category_code, category_name, parent_code, level) VALUES (%s, %s, %s, %s)"
             db.execute_insert(insert_category, (category_code, category_name, parent_code, 2))
 
-    print("카테고리(cat2) 데이터 저장 완료")
+    print("***카테고리(cat2) 데이터 저장 완료***")
 
 
 # 소분류 카테고리(cat3) 조회 및 저장
@@ -163,7 +163,7 @@ def korea_category3_code(db, secret_key, base_url):
             insert_category = "INSERT INTO api_category(category_code, category_name, parent_code, level) VALUES (%s, %s, %s, %s)"
             db.execute_insert(insert_category, (category_code, category_name, cat2_code, 3))
 
-    print("카테고리(cat3) 데이터 저장 완료")
+    print("***카테고리(cat3) 데이터 저장 완료***")
         
 
 # 지역기반 관광정보 조회 및 저장
@@ -227,7 +227,7 @@ def korea_area_based_list(db, secret_key, base_url):
                         , (district_id, category_code, content_type_id, place_name, address, detail_address, longitude, latitude, api_content_id, api_created_at, api_updated_at))
                     
         print("------------지역 기반 데이터 저장 사이클------------")
-    print("관광지 데이터 저장 완료")
+    print("***관광지 데이터 저장 완료***")
 
 
 
@@ -262,7 +262,7 @@ def korea_detail_common(db, secret_key, base_url):
                 db.execute_update(update_place_overview, (overview_value, content_id["api_content_id"]))
                 
 
-    print("관광지 설명 데이터 저장 완료")
+    print("***관광지 설명 데이터 저장 완료***")
     
 
     
