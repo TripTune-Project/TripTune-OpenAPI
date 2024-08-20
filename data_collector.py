@@ -2,7 +2,7 @@ from api_handler import *
 from db_handler import DatabaseHandler
 from datetime import datetime
 
-
+# 도시 코드 조회 및 저장
 def korea_city_code(db, secret_key, base_url):
     url = base_url + "/areaCode1"
 
@@ -34,7 +34,7 @@ def korea_city_code(db, secret_key, base_url):
     print("city 데이터 저장 완료")
 
 
-
+# 지역(시군구) 코드 조회 및 저장
 def korea_district_code(db, secret_key, base_url):
     url = base_url + "/areaCode1"
 
@@ -70,7 +70,7 @@ def korea_district_code(db, secret_key, base_url):
 
 
 
-
+# 대분류 카테고리(cat1) 조회 및 저장
 def korea_category1_code(db, secret_key, base_url):
     url = base_url + "/categoryCode1"
 
@@ -96,7 +96,7 @@ def korea_category1_code(db, secret_key, base_url):
     print("카테고리(cat1) 데이터 저장 완료")
 
 
-
+# 중분류 카테고리(cat2) 조회 및 저장
 def korea_category2_code(db, secret_key, base_url):
     url = base_url + "/categoryCode1"
 
@@ -130,7 +130,7 @@ def korea_category2_code(db, secret_key, base_url):
     print("카테고리(cat2) 데이터 저장 완료")
 
 
-
+# 소분류 카테고리(cat3) 조회 및 저장
 def korea_category3_code(db, secret_key, base_url):
     url = base_url + "/categoryCode1"
 
@@ -166,7 +166,7 @@ def korea_category3_code(db, secret_key, base_url):
     print("카테고리(cat3) 데이터 저장 완료")
         
 
-
+# 지역기반 관광정보 조회 및 저장
 def korea_area_based_list(db, secret_key, base_url):
     url = base_url + "/areaBasedList1"
 
@@ -197,7 +197,7 @@ def korea_area_based_list(db, secret_key, base_url):
         sigungu_code = korea_area["api_sigungu_code"]
 
         for content_type in content_types:
-            params["contentTypeId"] = content_type["api_content_id"]
+            params["contentTypeId"] = content_type["api_content_type_id"]
             params["areaCode"] = area_code
             params["sigunguCode"] = sigungu_code
 
@@ -209,21 +209,87 @@ def korea_area_based_list(db, secret_key, base_url):
                 for item in items:
                     district_id = korea_area["district_id"]
                     category_code = item["cat3"]
+                    content_type_id = content_type["content_type_id"]
                     place_name = item["title"]
                     address = item["addr1"]
-                    detail_address = item["addr2"]
+                    detail_address = item["addr2"] if item["addr2"] != "" else None
                     longitude = item["mapx"]
                     latitude = item["mapy"]
                     api_created_at = convert_to_datetime(item["createdtime"])
                     api_updated_at = convert_to_datetime(item["modifiedtime"])
+                    api_content_id = item["contentid"]
 
-                    insert_travel_place = """INSERT INTO travel_place(district_id, category_code, place_name, address, detail_address
-                                                , longitude, latitude, created_at, api_created_at, api_updated_at) 
-                                            VALUES (%s, %s, %s, %s, %s, %s, %s, now(), %s, %s)"""
+                    insert_travel_place = """INSERT INTO travel_place(district_id, category_code, content_type_id, place_name, address, detail_address
+                                                , longitude, latitude, api_content_id, created_at, api_created_at, api_updated_at) 
+                                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, now(), %s, %s)"""
 
-                    db.execute_insert(insert_travel_place, (district_id, category_code, place_name, address, detail_address, longitude, latitude, api_created_at, api_updated_at))
+                    db.execute_insert(insert_travel_place
+                        , (district_id, category_code, content_type_id, place_name, address, detail_address, longitude, latitude, api_content_id, api_created_at, api_updated_at))
                     
-    print("------------area cycle------------")
+        print("------------지역 기반 데이터 저장 사이클------------")
+    print("관광지 데이터 저장 완료")
+
+
+
+# 공통정보(관광지 소개 정보 데이터) 조회 및 저장
+def korea_detail_common(db, secret_key, base_url):
+    url = base_url + "/detailCommon1"
+
+    params = {
+        "serviceKey": secret_key,
+        "numOfRows": 10,
+        "pageNo": 1,
+        "MobileOS": "ETC",
+        "MobileApp": "TripTune",
+        "_type": "json",
+        "overviewYN": "Y"
+    }
+
+    select_content_id = "SELECT api_content_id FROM travel_place"
+    content_ids = db.execute_select_all(select_content_id)
+
+    for content_id in content_ids:
+        params["contentId"] = content_id["api_content_id"]
+        total_count = get_total_count(url, params)
+
+        if total_count != 0:
+            items = fetch_items(url, params, total_count)
+
+            for item in items:
+                overview_value = item["overview"] if item["overview"] != "" else None
+
+                update_place_overview = "UPDATE travel_place SET description = %s WHERE api_content_id = %s"
+                db.execute_update(update_place_overview, (overview_value, content_id["api_content_id"]))
+                
+
+    print("관광지 설명 데이터 저장 완료")
+    
+
+    
+
+
+
+def test(db, secret_key, base_url):
+    url = base_url + "/areaBasedList1"
+
+    params = {
+        "serviceKey": secret_key,
+        "numOfRows": 10,
+        "pageNo": 1,
+        "MobileOS": "ETC",
+        "MobileApp": "TripTune",
+        "_type": "json"
+    }
+
+    params["contentTypeId"] = 38
+    params["areaCode"] = 1
+    params["sigunguCode"] = 23
+
+    total_count = get_total_count(url, params)
+    print("---------", total_count, "----------")
+
+    if total_count != 0:
+        items = fetch_items(url, params, total_count)
 
 
 

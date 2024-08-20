@@ -24,6 +24,10 @@ class DatabaseHandler:
     def execute_insert(self, query, params):
         self.cursor.execute(query, params)
         self.conn.commit()
+
+    def execute_update(self, query, params):
+        self.cursor.execute(query, params)
+        self.conn.commit()
     
     def close(self):
         self.conn.close()

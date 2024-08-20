@@ -17,7 +17,7 @@ def main():
 
     if not all([secret_key, base_url, db_host, db_user, db_password, db_name, db_port]):
         print("환경 변수 불러오기 실패")
-        return
+        return None
 
 
     db = DatabaseHandler(db_host, db_user, db_password, db_name, db_port)
@@ -28,7 +28,8 @@ def main():
         # korea_category1_code(db, secret_key, base_url)
         # korea_category2_code(db, secret_key, base_url)
         # korea_category3_code(db, secret_key, base_url)
-        korea_area_based_list(db, secret_key, base_url)
+        # korea_area_based_list(db, secret_key, base_url)
+        korea_detail_common(db, secret_key, base_url)
         
     finally:
         db.close()
