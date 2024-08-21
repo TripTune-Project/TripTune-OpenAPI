@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 from db_handler import DatabaseHandler
 from data_collector import *
+from data_collector_split import *
 
 
 def main():
@@ -29,7 +30,8 @@ def main():
         # korea_category2_code(db, secret_key, base_url)
         # korea_category3_code(db, secret_key, base_url)
         # korea_area_based_list(db, secret_key, base_url)
-        korea_detail_common(db, secret_key, base_url)
+        # korea_detail_common(db, secret_key, base_url)
+        korea_specific_area_based_list(db, secret_key, base_url, '서울', '강남구')
         
     finally:
         db.close()
