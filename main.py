@@ -1,8 +1,9 @@
 import os
 from dotenv import load_dotenv
 from db_handler import DatabaseHandler
-from data_collector import *
-from data_collector_split import *
+from data_collector_area import *
+from data_collector_category import *
+from data_collector_travel import *
 
 
 def main():
