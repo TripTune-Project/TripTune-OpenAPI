@@ -1,3 +1,5 @@
+import os
+import datetime
 from api_handler import *
 from utils import *
 from db_handler import DatabaseHandler
@@ -32,6 +34,7 @@ def korea_area_based_list(db, secret_key, base_url):
     for korea_area in korea_areas:
         area_code = korea_area["api_area_code"]
         sigungu_code = korea_area["api_sigungu_code"]
+        district_id = korea_area["district_id"]
 
         for content_type in content_types:
             params["contentTypeId"] = content_type["api_content_type_id"]
@@ -44,7 +47,6 @@ def korea_area_based_list(db, secret_key, base_url):
                 items = fetch_items(url, params, total_count)
 
                 for item in items:
-                    district_id = korea_area["district_id"]
                     category_code = item["cat3"]
                     content_type_id = content_type["content_type_id"]
                     place_name = item["title"]
@@ -65,6 +67,7 @@ def korea_area_based_list(db, secret_key, base_url):
                     
                      # 관광지 소개 정보 함수 호출
                     korea_detail_common(db, secret_key, base_url, api_content_id)
+
 
         print("------------지역 기반 데이터 저장 사이클------------")
 
@@ -124,6 +127,7 @@ def korea_specific_area_based_list(db, secret_key, base_url, city, district):
                 api_created_at = convert_to_datetime(item["createdtime"])
                 api_updated_at = convert_to_datetime(item["modifiedtime"])
                 api_content_id = item["contentid"]
+                image_url = item["firstimage"]
 
                 insert_travel_place = """INSERT INTO travel_place(district_id, category_code, content_type_id, place_name, address, detail_address
                                             , longitude, latitude, api_content_id, created_at, api_created_at, api_updated_at) 
@@ -132,8 +136,14 @@ def korea_specific_area_based_list(db, secret_key, base_url, city, district):
                 db.execute_insert(insert_travel_place
                     , (district_id, category_code, content_type_id, place_name, address, detail_address, longitude, latitude, api_content_id, api_created_at, api_updated_at))
                 
+                place_id = db.execute_last_inserted_id()
+
                 # 관광지 소개 정보 함수 호출
                 korea_detail_common(db, secret_key, base_url, api_content_id)
+
+                # 관광지 이미지 저장 함수 호출
+                if image_url != "":
+                    korea_travel_image(db, district_id, place_id, image_url)
 
 
     print("***관광지 데이터 저장 완료***")
@@ -171,3 +181,32 @@ def korea_detail_common(db, secret_key, base_url, api_content_id):
     print("***관광지 설명 데이터 저장 완료***")
 
 
+
+def korea_travel_image(db, district_id, place_id, image_url):
+    if image_url is not None:
+        extension = image_url.split(".")[-1]
+        original_name = image_url.split("/")[-1]
+
+        store_directory = os.path.join("img", "korea", str(district_id).zfill(2))
+
+        file_name = datetime.now().strftime("%Y%m%d%H%M%S") + "_tourapi_firstimage." + extension
+        file_path = os.path.join(store_directory, file_name)
+
+        os.makedirs(store_directory, exist_ok=True)
+
+        # 이미지 압축 및 저장
+        compress_and_save_image(image_url, file_path, 75)
+
+        file_size = os.path.getsize(file_path)
+
+        insert_travel_image = """INSERT INTO files(original_name, file_name, file_path, file_type, file_size, created_at, is_thumbnail, api_file_url)
+                                VALUES (%s, %s, %s, %s, %s, now(), 1, %s)"""
+
+        db.execute_insert(insert_travel_image, (original_name, file_name, file_path, extension, file_size, image_url))
+        file_id = db.execute_last_inserted_id()
+
+        insert_place_with_image = "INSERT INTO travel_image_file(place_id, file_id) VALUES (%s, %s)"
+        db.execute_insert(insert_place_with_image, (place_id, file_id))
+            
+
+            

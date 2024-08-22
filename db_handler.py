@@ -28,6 +28,11 @@ class DatabaseHandler:
     def execute_update(self, query, params):
         self.cursor.execute(query, params)
         self.conn.commit()
+
+    def execute_last_inserted_id(self):
+        return self.cursor.lastrowid
     
     def close(self):
         self.conn.close()
+    
+    
