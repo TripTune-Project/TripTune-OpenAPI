@@ -1,8 +1,8 @@
 import os
 import datetime
-from api_handler import *
-from utils import *
-from db_handler import DatabaseHandler
+from api.api_handler import *
+from utils.utils import *
+from db.db_handler import DatabaseHandler
 
 
 # 지역기반 관광정보 조회 및 저장

@@ -1,6 +1,6 @@
-from api_handler import *
-from utils import *
-from db_handler import DatabaseHandler
+from api.api_handler import *
+from utils.utils import *
+from db.db_handler import DatabaseHandler
 
 
 # 대분류 카테고리(cat1) 조회 및 저장

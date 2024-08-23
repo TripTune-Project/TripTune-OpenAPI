@@ -1,9 +1,9 @@
 import os
 from dotenv import load_dotenv
-from db_handler import DatabaseHandler
-from data_collector_area import *
-from data_collector_category import *
-from data_collector_travel import *
+from db.db_handler import DatabaseHandler
+from data.data_collector_area import *
+from data.data_collector_category import *
+from data.data_collector_travel import *
 
 
 def main():
@@ -33,7 +33,6 @@ def main():
         # korea_area_based_list(db, secret_key, base_url)
         # korea_detail_common(db, secret_key, base_url)
         korea_specific_area_based_list(db, secret_key, base_url, '서울', '강남구')
-        # korea_travel_image(db, 1, "http://tong.visitkorea.or.kr/cms/resource/09/3045109_image2_1.jpg")        
     finally:
         db.close()
 
