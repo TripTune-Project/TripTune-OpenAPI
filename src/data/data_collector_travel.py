@@ -3,6 +3,7 @@ import datetime
 from api.api_handler import *
 from utils.utils import *
 from db.db_handler import DatabaseHandler
+from aws import S3Handler
 
 
 # 지역기반 관광정보 조회 및 저장
@@ -182,31 +183,26 @@ def korea_detail_common(db, secret_key, base_url, api_content_id):
 
 
 
-def korea_travel_image(db, district_id, place_id, image_url):
+def korea_travel_image(db, s3, district_id, place_id, image_url):
     if image_url is not None:
-        extension = image_url.split(".")[-1]
         original_name = image_url.split("/")[-1]
+        file_name = datetime.now().strftime("%Y%m%d%H%M%S") + "_tourapi_firstimage.jpg"
+        file_path = "img/korea/" + str(district_id).zfill(2) + "/" + file_name
 
-        store_directory = os.path.join("img", "korea", str(district_id).zfill(2))
+        # 이미지 다운 및 압축
+        compressed_image, file_size = download_and_compress_image(image_url, 75)
+        
+        # s3 이미지 저장
+        object_url = s3.upload_file(compressed_image, file_path)
 
-        file_name = datetime.now().strftime("%Y%m%d%H%M%S") + "_tourapi_firstimage." + extension
-        file_path = os.path.join(store_directory, file_name)
-
-        os.makedirs(store_directory, exist_ok=True)
-
-        # 이미지 압축 및 저장
-        compress_and_save_image(image_url, file_path, 75)
-
-        file_size = os.path.getsize(file_path)
-
-        insert_travel_image = """INSERT INTO files(original_name, file_name, file_path, file_type, file_size, created_at, is_thumbnail, api_file_url)
+        insert_travel_image = """INSERT INTO files(s3_object_url, original_name, file_name, file_type, file_size, created_at, is_thumbnail, api_file_url)
                                 VALUES (%s, %s, %s, %s, %s, now(), 1, %s)"""
 
-        db.execute_insert(insert_travel_image, (original_name, file_name, file_path, extension, file_size, image_url))
+        db.execute_insert(insert_travel_image, (object_url, original_name, file_name, "jpg", file_size, image_url))
         file_id = db.execute_last_inserted_id()
 
-        insert_place_with_image = "INSERT INTO travel_image_file(place_id, file_id) VALUES (%s, %s)"
-        db.execute_insert(insert_place_with_image, (place_id, file_id))
+        insert_travel_image_file = "INSERT INTO travel_image_file(place_id, file_id) VALUES (%s, %s)"
+        db.execute_insert(insert_travel_image_file, (place_id, file_id))
             
 
             

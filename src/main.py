@@ -23,29 +23,30 @@ def main():
 
     # s3
     s3_region_name = os.getenv("S3_REGION")
+    s3_bucket_name = os.getenv("S3_BUCKET_NAME")
     aws_accees_key_id = os.getenv("AWS_ACCESS_KEY_ID")
     aws_secret_access_key = os.getenv("AWS_SECRET_ACCESS_KEY")
 
-
-    if not all([secret_key, base_url, db_host, db_user, db_password, db_name, db_port, s3_region_name, aws_accees_key_id, aws_secret_access_key]):
+    if not all([secret_key, base_url, db_host, db_user, db_password, db_name, db_port, s3_region_name, s3_bucket_name, aws_accees_key_id, aws_secret_access_key]):
         print("환경 변수 불러오기 실패")
         return None
 
 
     db = DatabaseHandler(db_host, db_user, db_password, db_name, db_port)
-    s3 = S3Handler(s3_region_name, aws_accees_key_id, aws_secret_access_key)
+    s3 = S3Handler(s3_region_name, s3_bucket_name, aws_accees_key_id, aws_secret_access_key)
     
-    # try:
-    #     # korea_city_code(db, secret_key, base_url)
-    #     # korea_district_code(db, secret_key, base_url)
-    #     # korea_category1_code(db, secret_key, base_url)
-    #     # korea_category2_code(db, secret_key, base_url)
-    #     # korea_category3_code(db, secret_key, base_url)
-    #     # korea_area_based_list(db, secret_key, base_url)
-    #     # korea_detail_common(db, secret_key, base_url)
-    #     korea_specific_area_based_list(db, secret_key, base_url, '서울', '강남구')
-    # finally:
-    #     db.close()
+    try:
+        # korea_city_code(db, secret_key, base_url)
+        # korea_district_code(db, secret_key, base_url)
+        # korea_category1_code(db, secret_key, base_url)
+        # korea_category2_code(db, secret_key, base_url)
+        # korea_category3_code(db, secret_key, base_url)
+        # korea_area_based_list(db, secret_key, base_url)
+        # korea_detail_common(db, secret_key, base_url)
+        # korea_specific_area_based_list(db, secret_key, base_url, '서울', '강남구')
+        korea_travel_image(db, s3, 1, 1, "http://tong.visitkorea.or.kr/cms/resource/08/1984608_image2_1.jpg")
+    finally:
+        db.close()
 
 
 
