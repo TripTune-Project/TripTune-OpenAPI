@@ -26,7 +26,7 @@ def download_and_compress_image(image_url, quality):
         img_byte_arr.seek(0)
         img_size = len(img_byte_arr.getvalue())
 
-        print(f"이미지 다운 및 압축 완료")
+        print(f"***이미지 다운 및 압축 완료***")
 
         return img_byte_arr, img_size
     else:

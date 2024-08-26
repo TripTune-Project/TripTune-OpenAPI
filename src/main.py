@@ -41,10 +41,10 @@ def main():
         # korea_category1_code(db, secret_key, base_url)
         # korea_category2_code(db, secret_key, base_url)
         # korea_category3_code(db, secret_key, base_url)
-        # korea_area_based_list(db, secret_key, base_url)
+        # korea_area_based_list(db, s3, secret_key, base_url)
         # korea_detail_common(db, secret_key, base_url)
-        # korea_specific_area_based_list(db, secret_key, base_url, '서울', '강남구')
-        korea_travel_image(db, s3, 1, 1, "http://tong.visitkorea.or.kr/cms/resource/08/1984608_image2_1.jpg")
+        # korea_specific_area_based_list(db, s3, secret_key, base_url, '서울', '강남구')
+        korea_limited_area_based_list(db, s3, secret_key, base_url, '제주도', '서귀포시')
     finally:
         db.close()
 
