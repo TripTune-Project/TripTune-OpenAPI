@@ -1,4 +1,5 @@
 import os
+import uuid
 import datetime
 from api.api_handler import *
 from utils.utils import *
@@ -19,11 +20,16 @@ def korea_area_based_list(db, s3, secret_key, base_url):
         "_type": "json"
     }
 
-    # 도시, 지역 조회
-    select_city_and_district = """SELECT c.city_id, c.city_name, c.api_area_code, d.district_id, d.district_name, d.api_sigungu_code
-                                FROM city c
-                                JOIN district d
-                                ON c.city_id = d.city_id
+    # 나라, 도시, 지역 조회
+    select_city_and_district = """SELECT
+                                    ct.country_id, ct.country_name,
+                                    c.city_id, c.city_name, c.api_area_code,
+                                    d.district_id, d.district_name, d.api_sigungu_code
+                                FROM district d
+                                INNER JOIN city c
+                                ON d.city_id = c.city_id
+                                INNER JOIN country ct
+                                ON c.country_id = ct.country_id
                                 """
     korea_areas = db.execute_select_all(select_city_and_district)
 
@@ -35,6 +41,8 @@ def korea_area_based_list(db, s3, secret_key, base_url):
     for korea_area in korea_areas:
         area_code = korea_area["api_area_code"]
         sigungu_code = korea_area["api_sigungu_code"]
+        country_id = korea_area["country_id"]
+        city_id = korea_area["city_id"]
         district_id = korea_area["district_id"]
 
         for content_type in content_types:
@@ -59,12 +67,12 @@ def korea_area_based_list(db, s3, secret_key, base_url):
                     api_updated_at = convert_to_datetime(item["modifiedtime"])
                     api_content_id = item["contentid"]
 
-                    insert_travel_place = """INSERT INTO travel_place(district_id, category_code, content_type_id, place_name, address, detail_address
+                    insert_travel_place = """INSERT INTO travel_place(country_id, city_id, district_id, category_code, content_type_id, place_name, address, detail_address
                                                 , longitude, latitude, api_content_id, created_at, api_created_at, api_updated_at) 
-                                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, now(), %s, %s)"""
+                                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now(), %s, %s)"""
 
                     db.execute_insert(insert_travel_place
-                        , (district_id, category_code, content_type_id, place_name, address, detail_address, longitude, latitude, api_content_id, api_created_at, api_updated_at))
+                        , (country_id, city_id, district_id, category_code, content_type_id, place_name, address, detail_address, longitude, latitude, api_content_id, api_created_at, api_updated_at))
                     
                      # 관광지 소개 정보 함수 호출
                     korea_detail_common(db, secret_key, base_url, api_content_id)
@@ -81,7 +89,7 @@ def korea_area_based_list(db, s3, secret_key, base_url):
 
 
 # 특정 지역 관광정보 조회 및 저장
-def korea_specific_area_based_list(db, s3, secret_key, base_url, city, district):
+def korea_specific_area_based_list(db, s3, secret_key, base_url, country, city, district):
     url = base_url + "/areaBasedList1"
 
     params = {
@@ -94,14 +102,20 @@ def korea_specific_area_based_list(db, s3, secret_key, base_url, city, district)
     }
 
     # 도시, 지역 조회
-    select_city_and_district = """SELECT c.city_id, c.city_name, c.api_area_code, d.district_id, d.district_name, d.api_sigungu_code
-                                FROM city c
-                                JOIN district d
-                                ON c.city_id = d.city_id
-                                WHERE c.city_name = %s
+    select_city_and_district = """SELECT
+                                    ct.country_id, ct.country_name,
+                                    c.city_id, c.city_name, c.api_area_code,
+                                    d.district_id, d.district_name, d.api_sigungu_code
+                                FROM district d
+                                INNER JOIN city c
+                                ON d.city_id = c.city_id
+                                INNER JOIN country ct
+                                ON c.country_id = ct.country_id
+                                WHERE ct.country_name = %s
+                                AND c.city_name = %s
                                 AND d.district_name = %s
                                 """
-    korea_area = db.execute_select_one(select_city_and_district, (city, district))
+    korea_area = db.execute_select_one(select_city_and_district, (country, city, district))
 
     # 컨텐츠 타입 조회
     select_content_types = "SELECT * FROM api_content_type"
@@ -109,6 +123,8 @@ def korea_specific_area_based_list(db, s3, secret_key, base_url, city, district)
 
     area_code = korea_area["api_area_code"]
     sigungu_code = korea_area["api_sigungu_code"]
+    country_id = korea_area["country_id"]
+    city_id = korea_area["city_id"]
     district_id = korea_area["district_id"]
 
 
@@ -135,12 +151,12 @@ def korea_specific_area_based_list(db, s3, secret_key, base_url, city, district)
                 api_content_id = item["contentid"]
                 image_url = item["firstimage"]
 
-                insert_travel_place = """INSERT INTO travel_place(district_id, category_code, content_type_id, place_name, address, detail_address
+                insert_travel_place = """INSERT INTO travel_place(country_id, city_id, district_id, category_code, content_type_id, place_name, address, detail_address
                                             , longitude, latitude, api_content_id, created_at, api_created_at, api_updated_at) 
-                                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, now(), %s, %s)"""
+                                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now(), %s, %s)"""
 
                 db.execute_insert(insert_travel_place
-                    , (district_id, category_code, content_type_id, place_name, address, detail_address, longitude, latitude, api_content_id, api_created_at, api_updated_at))
+                    , (country_id, city_id, district_id, category_code, content_type_id, place_name, address, detail_address, longitude, latitude, api_content_id, api_created_at, api_updated_at))
                 
                 place_id = db.execute_last_inserted_id()
 
@@ -155,7 +171,7 @@ def korea_specific_area_based_list(db, s3, secret_key, base_url, city, district)
     print("***관광지 데이터 저장 완료***")
 
 
-def korea_limited_area_based_list(db, s3, secret_key, base_url, city, district):
+def korea_limited_area_based_list(db, s3, secret_key, base_url, country, city, district):
     url = base_url + "/areaBasedList1"
 
     params = {
@@ -168,14 +184,20 @@ def korea_limited_area_based_list(db, s3, secret_key, base_url, city, district):
     }
 
     # 도시, 지역 조회
-    select_city_and_district = """SELECT c.city_id, c.city_name, c.api_area_code, d.district_id, d.district_name, d.api_sigungu_code
-                                FROM city c
-                                JOIN district d
-                                ON c.city_id = d.city_id
-                                WHERE c.city_name = %s
+    select_city_and_district = """SELECT
+                                    ct.country_id, ct.country_name,
+                                    c.city_id, c.city_name, c.api_area_code,
+                                    d.district_id, d.district_name, d.api_sigungu_code
+                                FROM district d
+                                INNER JOIN city c
+                                ON d.city_id = c.city_id
+                                INNER JOIN country ct
+                                ON c.country_id = ct.country_id
+                                WHERE ct.country_name = %s
+                                AND c.city_name = %s
                                 AND d.district_name = %s
                                 """
-    korea_area = db.execute_select_one(select_city_and_district, (city, district))
+    korea_area = db.execute_select_one(select_city_and_district, (country, city, district))
 
     # 컨텐츠 타입 조회
     select_content_types = "SELECT * FROM api_content_type"
@@ -183,6 +205,8 @@ def korea_limited_area_based_list(db, s3, secret_key, base_url, city, district):
 
     area_code = korea_area["api_area_code"]
     sigungu_code = korea_area["api_sigungu_code"]
+    country_id = korea_area["country_id"]
+    city_id = korea_area["city_id"]
     district_id = korea_area["district_id"]
 
     # 총 갯수 확인하기 위한 변수
@@ -211,12 +235,12 @@ def korea_limited_area_based_list(db, s3, secret_key, base_url, city, district):
                 api_content_id = item["contentid"]
                 image_url = item["firstimage"]
 
-                insert_travel_place = """INSERT INTO travel_place(district_id, category_code, content_type_id, place_name, address, detail_address
+                insert_travel_place = """INSERT INTO travel_place(country_id, city_id, district_id, category_code, content_type_id, place_name, address, detail_address
                                             , longitude, latitude, api_content_id, created_at, api_created_at, api_updated_at) 
-                                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, now(), %s, %s)"""
+                                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now(), %s, %s)"""
 
                 db.execute_insert(insert_travel_place
-                    , (district_id, category_code, content_type_id, place_name, address, detail_address, longitude, latitude, api_content_id, api_created_at, api_updated_at))
+                    , (country_id, city_id, district_id, category_code, content_type_id, place_name, address, detail_address, longitude, latitude, api_content_id, api_created_at, api_updated_at))
                 
                 place_id = db.execute_last_inserted_id()
 
@@ -236,7 +260,7 @@ def korea_limited_area_based_list(db, s3, secret_key, base_url, city, district):
 
 
 
-# 특정 공통정보(관광지 소개 정보 데이터) 조회 및 저장
+# 관광지 소개 정보 데이터 조회 및 저장
 def korea_detail_common(db, secret_key, base_url, api_content_id):
     url = base_url + "/detailCommon1"
 
@@ -270,7 +294,7 @@ def korea_detail_common(db, secret_key, base_url, api_content_id):
 def korea_travel_image(db, s3, district_id, place_id, image_url):
     if image_url is not None:
         original_name = image_url.split("/")[-1]
-        file_name = datetime.now().strftime("%Y%m%d%H%M%S") + "_tourapi_firstimage.jpg"
+        file_name = datetime.now().strftime("%y%m%d%H%M%S") + "_tourapi_firstimage_" + uuid.uuid4().hex[:8] + ".jpg"
         file_path = "img/korea/" + str(district_id).zfill(2) + "/" + file_name
 
         # 이미지 다운 및 압축
@@ -287,6 +311,3 @@ def korea_travel_image(db, s3, district_id, place_id, image_url):
 
         insert_travel_image_file = "INSERT INTO travel_image_file(place_id, file_id) VALUES (%s, %s)"
         db.execute_insert(insert_travel_image_file, (place_id, file_id))
-
-
-            

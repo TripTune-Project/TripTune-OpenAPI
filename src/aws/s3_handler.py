@@ -24,4 +24,10 @@ class S3Handler:
             return object_url
         except Exception as e:
             print("업로드 실패 : ", e)
-    
+
+    def delete_all_objects(self):
+        s3 = boto3.resource("s3")
+        bucket = s3.Bucket(self.bucket_name)
+        bucket.objects.all().delete()
+
+        print(f"{self.bucket_name}의 전체 데이터 삭제 완료")
