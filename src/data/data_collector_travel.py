@@ -303,7 +303,7 @@ def korea_travel_image(db, s3, district_id, place_id, image_url):
         # s3 이미지 저장
         object_url = s3.upload_file(compressed_image, file_path)
 
-        insert_travel_image = """INSERT INTO files(s3_object_url, original_name, file_name, file_type, file_size, created_at, is_thumbnail, api_file_url)
+        insert_travel_image = """INSERT INTO file(s3_object_url, original_name, file_name, file_type, file_size, created_at, is_thumbnail, api_file_url)
                                 VALUES (%s, %s, %s, %s, %s, now(), 1, %s)"""
 
         db.execute_insert(insert_travel_image, (object_url, original_name, file_name, "jpg", file_size, image_url))
