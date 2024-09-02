@@ -219,7 +219,7 @@ def korea_limited_area_based_list(db, s3, secret_key, base_url, country, city, d
 
         total_count = get_total_count(url, params)
 
-        if total_count != 0 and count <= 100:
+        if total_count != 0 and count <= 200:
             items = fetch_items(url, params, total_count)
 
             for item in items:
@@ -281,10 +281,11 @@ def korea_detail_common(db, secret_key, base_url, api_content_id):
         items = fetch_items(url, params, total_count)
 
         for item in items:
-            overview_value = item["overview"] if item["overview"] != "" else None
+            if item["overview"] == "" or item["overview"] == "-":
+                return None
 
             update_place_overview = "UPDATE travel_place SET description = %s WHERE api_content_id = %s"
-            db.execute_update(update_place_overview, (overview_value, api_content_id))
+            db.execute_update(update_place_overview, (item["overview"], api_content_id))
                 
 
     print("***관광지 설명 데이터 저장 완료***")

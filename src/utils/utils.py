@@ -20,6 +20,9 @@ def download_and_compress_image(image_url, quality):
     if response.status_code == 200:
         img = Image.open(BytesIO(response.content))
 
+        if img.mode == "RGBA":
+            img = img.convert("RGB")
+
         img_byte_arr = BytesIO()
         img.save(img_byte_arr, "JPEG", quality=quality)
 
