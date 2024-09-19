@@ -8,7 +8,7 @@ class DatabaseHandler:
             password=password,
             db=db,
             port=port,
-            charset="utf8",
+            charset='utf8',
             cursorclass=pymysql.cursors.DictCursor
         )
         self.cursor = self.conn.cursor()

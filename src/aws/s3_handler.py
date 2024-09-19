@@ -1,10 +1,13 @@
 import boto3
+from utils.log_handler import setup_logger
+
+logger = setup_logger()
 
 class S3Handler:
     def __init__(self, region_name, bucket_name, aws_access_key_id, aws_secret_access_key):
         try:
             self.s3 = boto3.client(
-                service_name = "s3",
+                service_name = 's3',
                 region_name = region_name,
                 aws_access_key_id = aws_access_key_id,
                 aws_secret_access_key = aws_secret_access_key,
@@ -12,22 +15,26 @@ class S3Handler:
             self.bucket_name = bucket_name
             self.region_name = region_name
 
-            print("s3 bucket connected!")
+            logger.info('s3 bucket 연결 완료!')
         except Exception as e:
-            print(e)
+            logger.error('s3 연결 실패 : ', e)
             
     def upload_file(self, image_byte_arr, object_path):
         try:
             self.s3.upload_fileobj(image_byte_arr, self.bucket_name, object_path)
             
-            object_url = "https://" + self.bucket_name + ".s3." + self.region_name + ".amazonaws.com/" + object_path
+            object_url = 'https://' + self.bucket_name + '.s3.' + self.region_name + '.amazonaws.com/' + object_path
             return object_url
         except Exception as e:
-            print("업로드 실패 : ", e)
+            logger.error('업로드 실패 : ', e)
 
     def delete_all_objects(self):
-        s3 = boto3.resource("s3")
-        bucket = s3.Bucket(self.bucket_name)
-        bucket.objects.all().delete()
+        try:
+            s3 = boto3.resource('s3')
+            bucket = s3.Bucket(self.bucket_name)
+            bucket.objects.all().delete()
 
-        print(f"{self.bucket_name}의 전체 데이터 삭제 완료")
+            logger.info(f'{self.bucket_name}의 전체 데이터 삭제 완료')
+        except Exception as e:
+            logger.error('삭제 실패 : ', e)
+        
