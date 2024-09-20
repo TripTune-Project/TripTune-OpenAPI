@@ -21,7 +21,7 @@ class DatabaseHandler:
         self.cursor.execute(query, params)
         return self.cursor.fetchone()
 
-    def execute_select_area_one(self, country, city, district):
+    def select_area_one(self, country, city, district):
         select_city_and_district = '''SELECT
                                         ct.country_id, ct.country_name,
                                         c.city_id, c.city_name, c.api_area_code,
@@ -39,7 +39,7 @@ class DatabaseHandler:
         self.cursor.execute(select_city_and_district, (country, city, district))
         return self.cursor.fetchone()
 
-    def execute_select_area_all(self):
+    def select_area_all(self):
         select_city_and_district = '''SELECT
                                     ct.country_id, ct.country_name,
                                     c.city_id, c.city_name, c.api_area_code,
@@ -53,10 +53,49 @@ class DatabaseHandler:
         self.cursor.execute(select_city_and_district)
         return self.cursor.fetchall()
 
-
     def execute_insert(self, query, params):
         self.cursor.execute(query, params)
         self.conn.commit()
+
+
+    def insert_travel_place(self, travel_place):
+        insert_travel_place = '''INSERT INTO travel_place(country_id, city_id, district_id, category_code, content_type_id, place_name, address, detail_address
+                                            , longitude, latitude, api_content_id, created_at, api_created_at, api_updated_at) 
+                                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now(), %s, %s)'''
+
+        # self.cursor.execute(insert_travel_place, (
+        #     travel_place.country_id, 
+        #     travel_place.city_id, 
+        #     travel_place.district_id, 
+        #     travel_place.category_code, 
+        #     travel_place.content_type_id, 
+        #     travel_place.place_name, 
+        #     travel_place.address, 
+        #     travel_place.detail_address, 
+        #     travel_place.longitude, 
+        #     travel_place.latitude, 
+        #     travel_place.api_content_id, 
+        #     travel_place.api_created_at, 
+        #     travel_place.api_updated_at
+        # ))
+
+        self.cursor.execute(insert_travel_place, (
+            travel_place.location.country_id, 
+            travel_place.location.city_id, 
+            travel_place.location.district_id, 
+            travel_place.category_code, 
+            travel_place.content_type_id, 
+            travel_place.place_name, 
+            travel_place.address, 
+            travel_place.detail_address, 
+            travel_place.longitude, 
+            travel_place.latitude, 
+            travel_place.api_content_id, 
+            travel_place.api_created_at, 
+            travel_place.api_updated_at
+        ))
+        self.conn.commit()
+                
 
     def execute_update(self, query, params):
         self.cursor.execute(query, params)
