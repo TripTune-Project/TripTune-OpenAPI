@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from db.db_handler import DatabaseHandler
+from data.data_collector_image import *
 from data.data_collector_area import *
 from data.data_collector_category import *
 from data.data_collector_travel import *
@@ -41,10 +42,11 @@ def main():
         # korea_category1_code(db, secret_key, base_url)
         # korea_category2_code(db, secret_key, base_url)
         # korea_category3_code(db, secret_key, base_url)
-        # korea_area_based_list(db, s3, secret_key, base_url)
-        # korea_detail_common(db, secret_key, base_url)
-        # korea_specific_area_based_list(db, s3, secret_key, base_url, '대한민국', '서울', '강남구')
-        korea_limited_area_based_list(db, s3, secret_key, base_url, '대한민국', '서울', '중구')
+        # korea_travel_places(db, s3, secret_key, base_url)
+        # korea_travel_place_overview(db, secret_key, base_url)
+        # specific_korea_travel_places(db, s3, secret_key, base_url, '대한민국', '서울', '강남구')
+        # limited_korea_travel_places(db, s3, secret_key, base_url, '대한민국', '서울', '중구')
+        limited_korea_travel_detail_image(db, s3, secret_key, base_url, '대한민국', '서울', '은평구')
     finally:
         db.close()
 
