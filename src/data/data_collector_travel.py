@@ -35,22 +35,15 @@ def korea_travel_places(db, s3, secret_key, base_url):
         '_type': 'json'
     }
 
-    # 나라, 도시, 지역 조회
-    select_city_and_district = '''SELECT
-                                    ct.country_id, ct.country_name,
-                                    c.city_id, c.city_name, c.api_area_code,
-                                    d.district_id, d.district_name, d.api_sigungu_code
-                                FROM district d
-                                INNER JOIN city c
-                                ON d.city_id = c.city_id
-                                INNER JOIN country ct
-                                ON c.country_id = ct.country_id
-                                '''
-    korea_areas = db.execute_select_all(select_city_and_district)
+    # 전체 지역 데이터 조회
+    korea_areas = db.execute_select_area_all()
+
+    if not korea_area:
+        logger.error(f'지역 정보가 존재하지 않습니다 - {country}, {city}, {district}')
+        return
 
     # 컨텐츠 타입 조회
-    select_content_types = 'SELECT * FROM api_content_type'
-    content_types = db.execute_select_all(select_content_types)
+    content_types = db.execute_select_all('SELECT * FROM api_content_type')
 
 
     for korea_area in korea_areas:
@@ -129,25 +122,15 @@ def specific_korea_travel_places(db, s3, secret_key, base_url, country, city, di
         '_type': 'json'
     }
 
-    # 도시, 지역 조회
-    select_city_and_district = '''SELECT
-                                    ct.country_id, ct.country_name,
-                                    c.city_id, c.city_name, c.api_area_code,
-                                    d.district_id, d.district_name, d.api_sigungu_code
-                                FROM district d
-                                INNER JOIN city c
-                                ON d.city_id = c.city_id
-                                INNER JOIN country ct
-                                ON c.country_id = ct.country_id
-                                WHERE ct.country_name = %s
-                                AND c.city_name = %s
-                                AND d.district_name = %s
-                                '''
-    korea_area = db.execute_select_one(select_city_and_district, (country, city, district))
+    # 지역 조회
+    korea_area = db.execute_select_area_one(country, city, district)
+
+    if not korea_area:
+        logger.error(f'지역 정보가 존재하지 않습니다 - {country}, {city}, {district}')
+        return
 
     # 컨텐츠 타입 조회
-    select_content_types = 'SELECT * FROM api_content_type'
-    content_types = db.execute_select_all(select_content_types)
+    content_types = db.execute_select_all('SELECT * FROM api_content_type')
 
     country_id = korea_area['country_id']
     city_id = korea_area['city_id']
@@ -226,25 +209,16 @@ def limited_korea_travel_places(db, s3, secret_key, base_url, country, city, dis
         '_type': 'json'
     }
 
-    # 도시, 지역 조회
-    select_city_and_district = '''SELECT
-                                    ct.country_id, ct.country_name,
-                                    c.city_id, c.city_name, c.api_area_code,
-                                    d.district_id, d.district_name, d.api_sigungu_code
-                                FROM district d
-                                INNER JOIN city c
-                                ON d.city_id = c.city_id
-                                INNER JOIN country ct
-                                ON c.country_id = ct.country_id
-                                WHERE ct.country_name = %s
-                                AND c.city_name = %s
-                                AND d.district_name = %s
-                                '''
-    korea_area = db.execute_select_one(select_city_and_district, (country, city, district))
+    # 지역 조회
+    korea_area = db.execute_select_area_one(country, city, district)
+
+    if not korea_area:
+        logger.error(f'지역 정보가 존재하지 않습니다 - {country}, {city}, {district}')
+        return
+
 
     # 컨텐츠 타입 조회
-    select_content_types = 'SELECT * FROM api_content_type'
-    content_types = db.execute_select_all(select_content_types)
+    content_types = db.execute_select_all('SELECT * FROM api_content_type')
 
     country_id = korea_area['country_id']
     city_id = korea_area['city_id']
