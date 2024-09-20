@@ -6,6 +6,8 @@ from api.api_handler import *
 from utils.utils import *
 from utils.log_handler import setup_logger
 from db.db_handler import DatabaseHandler
+from model.travel_place import TravelPlace
+from model.location import Location
 from aws import S3Handler
 
 
@@ -13,7 +15,7 @@ logger = setup_logger()
 
 def korea_travel_places(db, s3, secret_key, base_url):
     '''
-    DB에 저장되어 있는 지역 데이터(나라, 도시, 지역)를 이용해서 관광 정보를 조회하고 저장한다.
+    DB에 저장되어 있는 지역 데이터(나라, 도시, 지역), 컨텐츠 타입을 이용해서 관광 정보를 조회하고 저장한다.
     관광지 정보, 해당 관광지에 대한 소개 정보, 썸네일 이미지 등을 저장하는 기능을 한다.
     이미지 파일의 경우 S3에 이미지 파일로 저장된다.
 
@@ -36,9 +38,9 @@ def korea_travel_places(db, s3, secret_key, base_url):
     }
 
     # 전체 지역 데이터 조회
-    korea_areas = db.execute_select_area_all()
+    korea_areas = db.select_area_all()
 
-    if not korea_area:
+    if not korea_areas:
         logger.error(f'지역 정보가 존재하지 않습니다 - {country}, {city}, {district}')
         return
 
@@ -47,9 +49,7 @@ def korea_travel_places(db, s3, secret_key, base_url):
 
 
     for korea_area in korea_areas:
-        country_id = korea_area['country_id']
-        city_id = korea_area['city_id']
-        district_id = korea_area['district_id']
+        location = Location(korea_area['country_id'], korea_area['city_id'], korea_area['district_id'])
 
         for content_type in content_types:
             params['contentTypeId'] = content_type['api_content_type_id']
@@ -62,42 +62,40 @@ def korea_travel_places(db, s3, secret_key, base_url):
                 items = fetch_items(url, params, total_count)
 
                 for item in items:
-                    category_code = item['cat3']
-                    content_type_id = content_type['content_type_id']
-                    place_name = item['title']
-                    address = item['addr1']
-                    detail_address = item['addr2'] if item['addr2'] != '' else None
-                    longitude = item['mapx']
-                    latitude = item['mapy']
-                    api_created_at = convert_to_datetime(item['createdtime'])
-                    api_updated_at = convert_to_datetime(item['modifiedtime'])
-                    api_content_id = item['contentid']
+                    travel_place = TravelPlace(
+                        location,
+                        item['cat3'],
+                        content_type['content_type_id'],
+                        item['title'],
+                        item['addr1'],
+                        item['addr2'] if item['addr2'] != '' else None,
+                        item['mapx'],
+                        item['mapy'],
+                        item['contentid'],
+                        convert_to_datetime(item['createdtime']),
+                        convert_to_datetime(item['modifiedtime'])
+                    )
 
-                    insert_travel_place = '''INSERT INTO travel_place(country_id, city_id, district_id, category_code, content_type_id, place_name, address, detail_address
-                                                , longitude, latitude, api_content_id, created_at, api_created_at, api_updated_at) 
-                                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now(), %s, %s)'''
-
-                    db.execute_insert(insert_travel_place
-                        , (country_id, city_id, district_id, category_code, content_type_id, place_name, address, detail_address, longitude, latitude, api_content_id, api_created_at, api_updated_at))
+                    db.insert_travel_place(travel_place)
+                    place_id = db.execute_last_inserted_id()
                     
                      # 관광지 소개 정보 함수 호출
-                    korea_travel_place_overview(db, secret_key, base_url, api_content_id)
+                    korea_travel_place_overview(db, secret_key, base_url, travel_place.api_content_id)
 
                     # 관광지 이미지 저장 함수 호출
-                    if image_url != '':
-                        save_travel_image(db, s3, district_id, place_id, image_url, True)
+                    if item['firstimage'] != '':
+                        save_travel_image(db, s3, location.district_id, place_id, item['firstimage'], True)
 
 
-
-        logger.info(f'지역 {korea_area["city_name"]} 데이터 저장 완료')
-    logger.info('관광지 데이터 저장 완료')
+        logger.info(f'{korea_area["city_name"]} 지역 {total_count}개 데이터 저장 완료')
+    logger.info('korea_travel_places() - 관광지 데이터 저장 완료')
 
 
 
 # 특정 지역 관광정보 조회 및 저장
 def specific_korea_travel_places(db, s3, secret_key, base_url, country, city, district):
     '''
-    파라미터로 전달된 지역의 관광 정보를 조회하고 저장한다.
+    파라미터로 전달된 지역 정보와 DB에 저장된 컨텐츠 타입을 이용해 특정 지역의 관광지를 조회하고 저장한다.
     관광지 정보, 해당 관광지에 대한 소개 정보, 썸네일 이미지 등을 저장하는 기능을 한다.
     이미지 파일의 경우 S3에 이미지 파일로 저장된다.
 
@@ -123,7 +121,7 @@ def specific_korea_travel_places(db, s3, secret_key, base_url, country, city, di
     }
 
     # 지역 조회
-    korea_area = db.execute_select_area_one(country, city, district)
+    korea_area = db.select_area_one(country, city, district)
 
     if not korea_area:
         logger.error(f'지역 정보가 존재하지 않습니다 - {country}, {city}, {district}')
@@ -132,10 +130,7 @@ def specific_korea_travel_places(db, s3, secret_key, base_url, country, city, di
     # 컨텐츠 타입 조회
     content_types = db.execute_select_all('SELECT * FROM api_content_type')
 
-    country_id = korea_area['country_id']
-    city_id = korea_area['city_id']
-    district_id = korea_area['district_id']
-
+    location = Location(korea_area['country_id'], korea_area['city_id'], korea_area['district_id'])
 
     for content_type in content_types:
         params['contentTypeId'] = content_type['api_content_type_id']
@@ -148,41 +143,37 @@ def specific_korea_travel_places(db, s3, secret_key, base_url, country, city, di
             items = fetch_items(url, params, total_count)
 
             for item in items:
-                category_code = item['cat3']
-                content_type_id = content_type['content_type_id']
-                place_name = item['title']
-                address = item['addr1']
-                detail_address = item['addr2'] if item['addr2'] != '' else None
-                longitude = item['mapx']
-                latitude = item['mapy']
-                api_created_at = convert_to_datetime(item['createdtime'])
-                api_updated_at = convert_to_datetime(item['modifiedtime'])
-                api_content_id = item['contentid']
-                image_url = item['firstimage']
+                travel_place = TravelPlace(
+                        location,
+                        item['cat3'],
+                        content_type['content_type_id'],
+                        item['title'],
+                        item['addr1'],
+                        item['addr2'] if item['addr2'] != '' else None,
+                        item['mapx'],
+                        item['mapy'],
+                        item['contentid'],
+                        convert_to_datetime(item['createdtime']),
+                        convert_to_datetime(item['modifiedtime'])
+                )
 
-                insert_travel_place = '''INSERT INTO travel_place(country_id, city_id, district_id, category_code, content_type_id, place_name, address, detail_address
-                                            , longitude, latitude, api_content_id, created_at, api_created_at, api_updated_at) 
-                                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now(), %s, %s)'''
-
-                db.execute_insert(insert_travel_place
-                    , (country_id, city_id, district_id, category_code, content_type_id, place_name, address, detail_address, longitude, latitude, api_content_id, api_created_at, api_updated_at))
-                
+                db.insert_travel_place(travel_place)
                 place_id = db.execute_last_inserted_id()
 
                 # 관광지 소개 정보 함수 호출
-                korea_travel_place_overview(db, secret_key, base_url, api_content_id)
+                korea_travel_place_overview(db, secret_key, base_url, travel_place.api_content_id)
 
                 # 관광지 이미지 저장 함수 호출
-                if image_url != '':
-                    save_travel_image(db, s3, district_id, place_id, image_url, True)
+                if item['firstimage'] != '':
+                    save_travel_image(db, s3, location.district_id, place_id, item['firstimage'], True)
 
-
-    logger.info('관광지 데이터 저장 완료')
+        logger.info(f'{city} 지역 {total_count}개 데이터 저장 완료')
+    logger.info('specific_korea_travel_places() - 관광지 데이터 저장 완료')
 
 
 def limited_korea_travel_places(db, s3, secret_key, base_url, country, city, district):
     '''
-    파라미터로 전달된 지역의 관광 정보를 조회하고 저장한다.
+    파라미터로 전달된 지역 정보와 DB에 저장된 컨텐츠 타입을 이용해 특정 지역의 관광지를 조회하고 저장한다.
     관광지 정보, 해당 관광지에 대한 소개 정보, 썸네일 이미지 등을 저장하는 기능을 한다.
     이미지 파일의 경우 S3에 이미지 파일로 저장된다.
 
@@ -210,7 +201,7 @@ def limited_korea_travel_places(db, s3, secret_key, base_url, country, city, dis
     }
 
     # 지역 조회
-    korea_area = db.execute_select_area_one(country, city, district)
+    korea_area = db.select_area_one(country, city, district)
 
     if not korea_area:
         logger.error(f'지역 정보가 존재하지 않습니다 - {country}, {city}, {district}')
@@ -220,9 +211,7 @@ def limited_korea_travel_places(db, s3, secret_key, base_url, country, city, dis
     # 컨텐츠 타입 조회
     content_types = db.execute_select_all('SELECT * FROM api_content_type')
 
-    country_id = korea_area['country_id']
-    city_id = korea_area['city_id']
-    district_id = korea_area['district_id']
+    location = Location(korea_area['country_id'], korea_area['city_id'], korea_area['district_id'])
 
     # 총 갯수 확인하기 위한 변수
     count = 0
@@ -238,37 +227,35 @@ def limited_korea_travel_places(db, s3, secret_key, base_url, country, city, dis
             items = fetch_items(url, params, total_count)
 
             for item in items:
-                category_code = item['cat3']
-                content_type_id = content_type['content_type_id']
-                place_name = item['title']
-                address = item['addr1']
-                detail_address = item['addr2'] if item['addr2'] != '' else None
-                longitude = item['mapx']
-                latitude = item['mapy']
-                api_created_at = convert_to_datetime(item['createdtime'])
-                api_updated_at = convert_to_datetime(item['modifiedtime'])
-                api_content_id = item['contentid']
-                image_url = item['firstimage']
+                travel_place = TravelPlace(
+                        location,
+                        item['cat3'],
+                        content_type['content_type_id'],
+                        item['title'],
+                        item['addr1'],
+                        item['addr2'] if item['addr2'] != '' else None,
+                        item['mapx'],
+                        item['mapy'],
+                        item['contentid'],
+                        convert_to_datetime(item['createdtime']),
+                        convert_to_datetime(item['modifiedtime'])
+                    )
 
-                insert_travel_place = '''INSERT INTO travel_place(country_id, city_id, district_id, category_code, content_type_id, place_name, address, detail_address
-                                            , longitude, latitude, api_content_id, created_at, api_created_at, api_updated_at) 
-                                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now(), %s, %s)'''
-
-                db.execute_insert(insert_travel_place
-                    , (country_id, city_id, district_id, category_code, content_type_id, place_name, address, detail_address, longitude, latitude, api_content_id, api_created_at, api_updated_at))
-                
+                db.insert_travel_place(travel_place)
                 place_id = db.execute_last_inserted_id()
 
                 # 관광지 소개 정보 함수 호출
-                korea_travel_place_overview(db, secret_key, base_url, api_content_id)
+                korea_travel_place_overview(db, secret_key, base_url, travel_place.api_content_id)
 
                 # 관광지 이미지 저장 함수 호출
-                if image_url != '':
-                    save_travel_image(db, s3, district_id, place_id, image_url, True)
+                if item['firstimage'] != '':
+                    save_travel_image(db, s3, location.district_id, place_id, item['firstimage'], True)
 
                 count += 1
- 
-    logger.info(f'총 {count}개 관광지 데이터 저장 완료')
+
+        logger.info(f'{city} 지역 {count}개 데이터 저장 완료')
+    logger.info('limited_korea_travel_places() - 관광지 데이터 저장 완료')
+
 
 
 # 관광지 소개 정보 데이터 조회 및 저장
@@ -309,7 +296,7 @@ def korea_travel_place_overview(db, secret_key, base_url, api_content_id):
             db.execute_update(update_place_overview, (item['overview'], api_content_id))
                 
 
-    logger.info(f'총 {total_count}개 관광지 설명 데이터 저장 완료')
+    logger.info(f'korea_travel_place_overview() - 총 {total_count}개 관광지 설명 데이터 저장 완료')
 
 
 

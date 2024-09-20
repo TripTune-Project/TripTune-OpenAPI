@@ -44,9 +44,9 @@ def main():
         # korea_category3_code(db, secret_key, base_url)
         # korea_travel_places(db, s3, secret_key, base_url)
         # korea_travel_place_overview(db, secret_key, base_url)
-        # specific_korea_travel_places(db, s3, secret_key, base_url, '대한민국', '서울', '강남구')
+        specific_korea_travel_places(db, s3, secret_key, base_url, '대한민국', '서울', '강남구')
         # limited_korea_travel_places(db, s3, secret_key, base_url, '대한민국', '서울', '중구')
-        limited_korea_travel_detail_image(db, s3, secret_key, base_url, '대한민국', '서울', '은평구')
+        # limited_korea_travel_detail_image(db, s3, secret_key, base_url, '대한민국', '서울', '은평구')
     finally:
         db.close()
 
