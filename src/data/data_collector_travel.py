@@ -1,16 +1,17 @@
 import os
 import uuid
 import datetime
-from utils.log_handler import setup_logger
+from .data_collector_image import *
 from api.api_handler import *
 from utils.utils import *
+from utils.log_handler import setup_logger
 from db.db_handler import DatabaseHandler
 from aws import S3Handler
 
 
 logger = setup_logger()
 
-def korea_area_based_list(db, s3, secret_key, base_url):
+def korea_travel_places(db, s3, secret_key, base_url):
     '''
     DB에 저장되어 있는 지역 데이터(나라, 도시, 지역)를 이용해서 관광 정보를 조회하고 저장한다.
     관광지 정보, 해당 관광지에 대한 소개 정보, 썸네일 이미지 등을 저장하는 기능을 한다.
@@ -87,11 +88,11 @@ def korea_area_based_list(db, s3, secret_key, base_url):
                         , (country_id, city_id, district_id, category_code, content_type_id, place_name, address, detail_address, longitude, latitude, api_content_id, api_created_at, api_updated_at))
                     
                      # 관광지 소개 정보 함수 호출
-                    korea_detail_common(db, secret_key, base_url, api_content_id)
+                    korea_travel_place_overview(db, secret_key, base_url, api_content_id)
 
                     # 관광지 이미지 저장 함수 호출
                     if image_url != '':
-                        korea_travel_image(db, s3, district_id, place_id, image_url)
+                        save_travel_image(db, s3, district_id, place_id, image_url, True)
 
 
 
@@ -101,7 +102,7 @@ def korea_area_based_list(db, s3, secret_key, base_url):
 
 
 # 특정 지역 관광정보 조회 및 저장
-def korea_specific_area_based_list(db, s3, secret_key, base_url, country, city, district):
+def specific_korea_travel_places(db, s3, secret_key, base_url, country, city, district):
     '''
     파라미터로 전달된 지역의 관광 정보를 조회하고 저장한다.
     관광지 정보, 해당 관광지에 대한 소개 정보, 썸네일 이미지 등을 저장하는 기능을 한다.
@@ -186,17 +187,17 @@ def korea_specific_area_based_list(db, s3, secret_key, base_url, country, city, 
                 place_id = db.execute_last_inserted_id()
 
                 # 관광지 소개 정보 함수 호출
-                korea_detail_common(db, secret_key, base_url, api_content_id)
+                korea_travel_place_overview(db, secret_key, base_url, api_content_id)
 
                 # 관광지 이미지 저장 함수 호출
                 if image_url != '':
-                    korea_travel_image(db, s3, district_id, place_id, image_url)
+                    save_travel_image(db, s3, district_id, place_id, image_url, True)
 
 
     logger.info('관광지 데이터 저장 완료')
 
 
-def korea_limited_area_based_list(db, s3, secret_key, base_url, country, city, district):
+def limited_korea_travel_places(db, s3, secret_key, base_url, country, city, district):
     '''
     파라미터로 전달된 지역의 관광 정보를 조회하고 저장한다.
     관광지 정보, 해당 관광지에 대한 소개 정보, 썸네일 이미지 등을 저장하는 기능을 한다.
@@ -285,27 +286,19 @@ def korea_limited_area_based_list(db, s3, secret_key, base_url, country, city, d
                 place_id = db.execute_last_inserted_id()
 
                 # 관광지 소개 정보 함수 호출
-                korea_detail_common(db, secret_key, base_url, api_content_id)
+                korea_travel_place_overview(db, secret_key, base_url, api_content_id)
 
                 # 관광지 이미지 저장 함수 호출
                 if image_url != '':
-                    korea_travel_image(db, s3, district_id, place_id, image_url)
+                    save_travel_image(db, s3, district_id, place_id, image_url, True)
 
                 count += 1
  
     logger.info(f'총 {count}개 관광지 데이터 저장 완료')
 
 
-def test():
-    logger.info('hello')
-    logger.error('error')
-    logger.info('***이미지 데이터 저장 완료***')
-    logger.info('이미지 데이터 저장 완료')
-
-
-
 # 관광지 소개 정보 데이터 조회 및 저장
-def korea_detail_common(db, secret_key, base_url, api_content_id):
+def korea_travel_place_overview(db, secret_key, base_url, api_content_id):
     '''
     파라미터로 전달된 관광지에 대한 소개 정보를 조회하고 저장한다.
     
@@ -346,37 +339,3 @@ def korea_detail_common(db, secret_key, base_url, api_content_id):
 
 
 
-def korea_travel_image(db, s3, district_id, place_id, image_url):
-    '''
-    파라미터로 전달된 관광지 이미지 데이터를 DB, S3에 저장한다.
-    이미지 파일의 경우 S3에 이미지 파일로 저장된다.
-
-
-    [Parameter]
-    db: mysql 데이터베이스 연결
-    s3: aws s3 연결
-    district_id: DB에 저장된 시군구 id
-    place_id: DB에 저장된 관광지 id
-    image_url: open api 에서 제공하는 관광지 이미지 url
-    '''
-    if image_url is not None:
-        original_name = image_url.split('/')[-1]
-        file_name = datetime.now().strftime('%y%m%d%H%M%S') + '_tourapi_firstimage_' + uuid.uuid4().hex[:8] + '.jpg'
-        file_path = 'img/korea/' + str(district_id).zfill(2) + '/' + file_name
-
-        # 이미지 다운 및 압축
-        compressed_image, file_size = download_and_compress_image(image_url, 75)
-        
-        # s3 이미지 저장
-        object_url = s3.upload_file(compressed_image, file_path)
-
-        insert_travel_image = '''INSERT INTO file(s3_object_url, original_name, file_name, file_type, file_size, created_at, is_thumbnail, api_file_url)
-                                VALUES (%s, %s, %s, %s, %s, now(), 1, %s)'''
-
-        db.execute_insert(insert_travel_image, (object_url, original_name, file_name, 'jpg', file_size, image_url))
-        file_id = db.execute_last_inserted_id()
-
-        insert_travel_image_file = 'INSERT INTO travel_image_file(place_id, file_id) VALUES (%s, %s)'
-        db.execute_insert(insert_travel_image_file, (place_id, file_id))
-    
-    logger.info('이미지 데이터 저장 완료')
