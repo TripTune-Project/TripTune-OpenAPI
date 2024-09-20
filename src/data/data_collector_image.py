@@ -87,7 +87,7 @@ def limited_korea_travel_detail_image(db, s3, secret_key, base_url, country, cit
     }
 
     # 지역 데이터 조회
-    korea_area = db.execute_select_area(country, city, district)
+    korea_area = db.execute_select_area_one(country, city, district)
 
     if not korea_area:
         logger.error(f'지역 정보가 존재하지 않습니다 - {country}, {city}, {district}')
