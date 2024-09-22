@@ -63,22 +63,6 @@ class DatabaseHandler:
                                             , longitude, latitude, api_content_id, created_at, api_created_at, api_updated_at) 
                                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now(), %s, %s)'''
 
-        # self.cursor.execute(insert_travel_place, (
-        #     travel_place.country_id, 
-        #     travel_place.city_id, 
-        #     travel_place.district_id, 
-        #     travel_place.category_code, 
-        #     travel_place.content_type_id, 
-        #     travel_place.place_name, 
-        #     travel_place.address, 
-        #     travel_place.detail_address, 
-        #     travel_place.longitude, 
-        #     travel_place.latitude, 
-        #     travel_place.api_content_id, 
-        #     travel_place.api_created_at, 
-        #     travel_place.api_updated_at
-        # ))
-
         self.cursor.execute(insert_travel_place, (
             travel_place.location.country_id, 
             travel_place.location.city_id, 
@@ -94,6 +78,19 @@ class DatabaseHandler:
             travel_place.api_created_at, 
             travel_place.api_updated_at
         ))
+        
+        self.conn.commit()
+
+    def insert_category(self, category):
+        insert_category = 'INSERT INTO api_category(category_code, category_name, parent_code, level) VALUES (%s, %s, %s, %s)'
+
+        self.cursor.execute(insert_category, (
+            category.category_code,
+            category.category_name,
+            category.parent_code,
+            category.level
+        ))
+
         self.conn.commit()
                 
 
