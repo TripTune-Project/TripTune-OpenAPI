@@ -27,23 +27,35 @@ def get_json_data(url, params):
     if response.status_code == 200:
         if 'application/json' in content_type:
             try:
-                return response.json()
+                data = response.json()
+
+                if 'response' in data and 'body' in data['response']:
+                    return data
+                elif 'resultMsg' in data and 'resultCode' in data:
+                    logger.error(f'get_json_data() - 에러 코드 : {data["resultCode"]}, 에러 메시지: {data["resultMsg"]}')
+                    sys.exit(1)
+                else:
+                    logger.error('get_json_data() - 예상치 못한 응답 구조 발생: {data}')
+                    sys.exit(1)
+
             except ValueError as e:
-                logger.error(f'JSON 파싱 오류: {e}')
+                logger.error(f'get_json_data() - JSON 파싱 오류: {e}')
                 sys.exit(1)
+
         elif 'application/xml' in content_type or 'text/xml' in content_type:
             try:
                 root = ET.fromstring(response.text)
-                logger.error(f'에러 코드 : {root.find(".//returnReasonCode").text}\n에러 메시지 : {root.find(".//returnAuthMsg").text}')
+                logger.error(f'get_json_data() - 에러 코드 : {root.find(".//returnReasonCode").text}\n에러 메시지 : {root.find(".//returnAuthMsg").text}')
                 sys.exit(1)
+
             except ET.ParseError as e:
-                logger.error('XML 파싱 오류 : {e}')
+                logger.error('get_json_data() - XML 파싱 오류 : {e}')
                 sys.exit(1)
         else:
-            logger.error(f'알 수 없는 컨텐츠 타입 : {content_type}')
+            logger.error(f'get_json_data() - 알 수 없는 컨텐츠 타입 : {content_type}')
             sys.exit(1)
     else:
-        logger.error(f'요청 실패: 상태코드 {response.status_code}\n컨텐츠 타입 : {content_type}')
+        logger.error(f'get_json_data() - 요청 실패: 상태코드 {response.status_code}\n컨텐츠 타입 : {content_type}')
         sys.exit(1)
 
 
