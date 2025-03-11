@@ -11,10 +11,6 @@ from aws.s3_handler import *
 def main():
     load_dotenv()
 
-    # tour api
-    secret_key = os.getenv('SECRET_KEY')
-    base_url = os.getenv('BASE_URL')
-
     # database
     db_host = os.getenv('DB_HOST')
     db_user = os.getenv('DB_USERNAME')
@@ -28,7 +24,7 @@ def main():
     aws_accees_key_id = os.getenv('AWS_ACCESS_KEY_ID')
     aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
 
-    if not all([secret_key, base_url, db_host, db_user, db_password, db_name, db_port, s3_region_name, s3_bucket_name, aws_accees_key_id, aws_secret_access_key]):
+    if not all([db_host, db_user, db_password, db_name, db_port, s3_region_name, s3_bucket_name, aws_accees_key_id, aws_secret_access_key]):
         print('환경 변수 불러오기 실패')
         return None
 
@@ -37,16 +33,13 @@ def main():
     s3 = S3Handler(s3_region_name, s3_bucket_name, aws_accees_key_id, aws_secret_access_key)
     
     try:
-        # korea_city_code(db, secret_key, base_url)
-        # korea_district_code(db, secret_key, base_url)
-        # korea_category1_code(db, secret_key, base_url)
-        # korea_category2_code(db, secret_key, base_url)
-        # korea_category3_code(db, secret_key, base_url)
-        # korea_travel_places(db, s3, secret_key, base_url)
-        # korea_travel_place_overview(db, secret_key, base_url)
-        specific_korea_travel_places(db, s3, secret_key, base_url, '대한민국', '서울', '강남구')
-        # limited_korea_travel_places(db, s3, secret_key, base_url, '대한민국', '서울', '중구')
-        # limited_korea_travel_detail_image(db, s3, secret_key, base_url, '대한민국', '서울', '은평구')
+        # korea_city_code(db)
+        # korea_district_code(db)
+        # korea_category1_code(db)
+        # korea_category2_code(db)
+        # korea_category3_code(db)
+
+        limited_korea_travel_places(db, s3, '부산', '강서구', '관광지', 20)
     finally:
         db.close()
 
