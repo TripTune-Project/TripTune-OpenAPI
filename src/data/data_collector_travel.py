@@ -35,6 +35,8 @@ def korea_travel_places(db, s3):
     # 컨텐츠 타입 조회
     content_types = db.execute_select_all('SELECT * FROM api_content_type')
 
+    # 총 저장된 데이터 갯수 확인하기 위한 변수
+    count = 0
 
     for korea_area in korea_areas:
         location = Location(korea_area['country_id'], korea_area['city_id'], korea_area['district_id'])
@@ -47,10 +49,10 @@ def korea_travel_places(db, s3):
             total_count = get_total_count(url, params)
 
             if total_count != 0:
-                save_travel_places(db, s3, url, params, total_count, location, content_type)
+                count = save_travel_places(db, s3, url, params, total_count, location, content_type, count)
 
         logger.info(f'{korea_area["city_name"]} 지역 {total_count}개 데이터 저장 완료')
-    logger.info('korea_travel_places() - 관광지 데이터 저장 완료')
+    logger.info(f'korea_travel_places() - 관광지 {count}개 데이터 저장 완료')
 
 
 
@@ -78,6 +80,9 @@ def specific_korea_travel_places(db, s3, city, district):
 
     location = Location(korea_area['country_id'], korea_area['city_id'], korea_area['district_id'])
 
+    # 총 저장된 데이터 갯수 확인하기 위한 변수
+    count = 0
+
     for content_type in content_types:
         params['contentTypeId'] = content_type['api_content_type_id']
         params['areaCode'] = korea_area['api_area_code']
@@ -86,10 +91,10 @@ def specific_korea_travel_places(db, s3, city, district):
         total_count = get_total_count(url, params)
 
         if total_count != 0:
-            save_travel_places(db, s3, url, params, total_count, location, content_type)
+            count = save_travel_places(db, s3, url, params, total_count, location, content_type, count)
                 
         logger.info(f'{city} 지역 {total_count}개 데이터 저장 완료')
-    logger.info('specific_korea_travel_places() - 관광지 데이터 저장 완료')
+    logger.info(f'specific_korea_travel_places() - 관광지 {count}개 데이터 저장 완료')
 
 
 def limited_korea_travel_places(db, s3, city, district, target_content_name, target_count):
@@ -118,8 +123,9 @@ def limited_korea_travel_places(db, s3, city, district, target_content_name, tar
     content_type = db.execute_select_one('SELECT * FROM api_content_type WHERE content_type_name = %s', target_content_name)
 
     location = Location(korea_area['country_id'], korea_area['city_id'], korea_area['district_id'])
+    
 
-    # 총 갯수 확인하기 위한 변수
+    # 총 저장된 데이터 갯수 확인하기 위한 변수
     count = 0
 
     params['contentTypeId'] = content_type['api_content_type_id']
@@ -130,59 +136,62 @@ def limited_korea_travel_places(db, s3, city, district, target_content_name, tar
     logger.info(f'총 데이터 갯수(total_count) - {total_count} 개')
 
     if total_count != 0 and count <= target_count:
-        save_travel_places(db, s3, url, params, total_count, location, content_type)
-        count += 1
-
-    logger.info(f'{city} 지역 {count}개 데이터 저장 완료')
-    logger.info('limited_korea_travel_places() - 관광지 데이터 저장 완료')
-
+        count = save_travel_places(db, s3, url, params, total_count, location, content_type, count)
+        
+    logger.info(f'{city} 지역 {total_count}개 데이터 저장 완료')
+    logger.info(f'limited_korea_travel_places() - 관광지 {count}개 데이터 저장 완료')
 
 
-def save_travel_places(db, s3, url, params, total_count, location, content_type):
+
+def save_travel_places(db, s3, url, params, total_count, location, content_type, count):
     items = fetch_items(url, params, total_count)
 
     for item in items:
-        
-        # 관광지 소개 정보 함수 호출
-        details = korea_travel_place_detail(db, travel_place.api_content_id)
+        if not db.execute_exist_travel_place(item['contentid']):
+            
+            # 관광지 소개 정보 함수 호출
+            details = korea_travel_place_detail(item['contentid'])
 
-        # 관광지 기본 정보 함수 호출
-        info = korea_travel_place_info(db, content_type['api_content_type_id'], travel_place.api_content_id)
- 
-        travel_place = TravelPlace(
-            location=location,
-            category_code=item['cat3'],
-            content_type_id=content_type['content_type_id'],
-            place_name=item['title'],
-            address=item['addr1'],
-            api_content_id=item['contentid'],
-            api_created_at=convert_to_datetime(item['createdtime']),
-            api_updated_at=convert_to_datetime(item['modifiedtime']),
-            detail_address=item['addr2'] if item['addr2'] != '' else None,
-            use_time=info['use_time'],
-            check_in_time=info['check_in_time'],
-            check_out_time=info['check_out_time'],
-            homepage=details['homepage'],
-            phone_number=details['phone_number'],
-            longitude=item['mapx'],
-            latitude=item['mapy'],
-            description= info['description']
-        )
+            # 관광지 기본 정보 함수 호출
+            info = korea_travel_place_info(content_type['api_content_type_id'], item['contentid'])
+    
+            travel_place = TravelPlace(
+                location=location,
+                category_code=item['cat3'],
+                content_type_id=content_type['content_type_id'],
+                place_name=item['title'],
+                address=item['addr1'],
+                api_content_id=item['contentid'],
+                api_created_at=convert_to_datetime(item['createdtime']),
+                api_updated_at=convert_to_datetime(item['modifiedtime']),
+                detail_address=item['addr2'] if item['addr2'] != '' else None,
+                use_time=info['use_time'],
+                check_in_time=info['check_in_time'],
+                check_out_time=info['check_out_time'],
+                homepage=details['homepage'],
+                phone_number=info['phone_number'],
+                longitude=item['mapx'],
+                latitude=item['mapy'],
+                description=details['description']
+            )
 
-        db.insert_travel_place(travel_place)
-        place_id = db.execute_last_inserted_id()
-
-
-        # 관광지 썸네일 이미지 저장 함수 호출
-        if item['firstimage'] != '':
-            save_travel_image(db, s3, location.district_id, place_id, item['firstimage'], True)
-
-        # 관광지 이미지 저장 함수 호출
-        limited_korea_travel_detail_image(db, s3, travel_place.api_content_id)
+            db.insert_travel_place(travel_place)
+            place_id = db.execute_last_inserted_id()
 
 
+            # 관광지 썸네일 이미지 저장 함수 호출
+            if item['firstimage'] != '':
+                save_travel_image(db, s3, location.district_id, place_id, item['firstimage'], True)
 
-def korea_travel_place_detail(db, api_content_id):
+            # 관광지 이미지 저장 함수 호출
+            limited_korea_travel_detail_image(db, s3, travel_place.api_content_id)
+            count += 1
+    
+    return count
+
+
+
+def korea_travel_place_detail(api_content_id):
     '''
     특정 관광지에 대한 소개 정보(description)와 홈페이지 정보(<a> 태그로 시작하는 홈페이지 주소)를 조회하고 저장한다.
     저장 위치 : travel_place.description
@@ -198,7 +207,10 @@ def korea_travel_place_detail(db, api_content_id):
         items = fetch_items(url, params, total_count)
 
         for item in items:
-            details = {}
+            details = {
+                'description': None, 
+                'homepage': None
+            }
 
             if item['overview'] != '' or item['overview'] != '-':
                 details['description'] = item['overview']
@@ -214,7 +226,7 @@ def korea_travel_place_detail(db, api_content_id):
 
                 
 
-def korea_travel_place_info(db, api_content_type_id, api_content_id):
+def korea_travel_place_info(api_content_type_id, api_content_id):
     '''
     콘텐츠 타입에 따른 관광지 정보(전화번호, 이용시간, 체크인 시간, 체크아웃 시간)를 조회한다.
     저장 위치 : travel_place.phone_number, travel_place.use_time, travel_place.check_in_time, travel_place.check_out_time
@@ -233,38 +245,33 @@ def korea_travel_place_info(db, api_content_type_id, api_content_id):
         items = fetch_items(url, params, total_count)
 
         for item in items:
-            info = {}
+            info = {
+                'phone_number': None,
+                'use_time': None,
+                'check_in_time': None,
+                'check_out_time': None
+            }
 
             if api_content_type_id == 12:   # 관광지
                 info['phone_number'] = item['infocenter'] if item['infocenter'] != '' else None
                 info['use_time'] = item['usetime'] if item['usetime'] != '' else None
-                info['check_in_time'] = None
-                info['check_out_time'] = None
             elif api_content_type_id == 14: # 문화시설
                 info['phone_number'] = item['infocenterculture'] if item['infocenterculture'] != '' else None
                 info['use_time'] = item['usetimeculture'] if item['usetimeculture'] != '' else None 
-                info['check_in_time'] = None
-                info['check_out_time'] = None
             elif api_content_type_id == 28: # 레포츠
                 info['phone_number'] = item['infocenterleports'] if item['infocenterleports'] != '' else None
                 info['use_time'] = item['usetimeleports'] if item['usetimeleports'] != '' else None 
-                info['check_in_time'] = None
-                info['check_out_time'] = None
             elif api_content_type_id == 32: # 숙박
                 info['phone_number'] = item['infocenterlodging'] if item['infocenterlodging'] != '' else None
-                info['use_time'] = None
                 info['check_in_time'] = item['checkintime'] if item['checkintime'] != '' else None
                 info['check_out_time'] = item['checkouttime'] if item['checkouttime'] != '' else None
             elif api_content_type_id == 38: # 쇼핑      
                 info['phone_number'] = item['infocentershopping'] if item['infocentershopping'] != '' else None
                 info['use_time'] = item['opentime'] if item['opentime'] != '' else None 
-                info['check_in_time'] = None
-                info['check_out_time'] = None
             elif api_content_type_id == 39: # 음식점
                 info['phone_number'] = item['infocenterfood'] if item['infocenterfood'] != '' else None
                 info['use_time'] = item['opentimefood'] if item['opentimefood'] != '' else None 
-                info['check_in_time'] = None
-                info['check_out_time'] = None
+   
 
         logger.info(f'korea_travel_place_info() - {api_content_id} 관광지 전화번호, 이용시간 데이터 저장 완료')
         return info
