@@ -13,6 +13,15 @@ class DatabaseHandler:
         )
         self.cursor = self.conn.cursor()
 
+    def execute_exist_travel_place(self, params=None):
+        exist_query = 'SELECT EXISTS (SELECT 1 FROM travel_place WHERE api_content_id = %s)'
+        self.cursor.execute(exist_query, params)
+        result = self.cursor.fetchone()
+
+        if result:
+            return list(result.values())[0]  # 딕셔너리의 첫 번째 값 반환
+        return 0
+
     def execute_select_all(self, query, params=None):
         self.cursor.execute(query, params)
         return self.cursor.fetchall()
@@ -59,24 +68,52 @@ class DatabaseHandler:
 
 
     def insert_travel_place(self, travel_place):
-        insert_travel_place = '''INSERT INTO travel_place(country_id, city_id, district_id, category_code, content_type_id, place_name, address, detail_address
-                                            , longitude, latitude, api_content_id, created_at, api_created_at, api_updated_at) 
-                                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now(), %s, %s)'''
+        insert_travel_place = '''
+                            INSERT INTO travel_place(
+                                country_id, 
+                                city_id, 
+                                district_id, 
+                                category_code, 
+                                content_type_id, 
+                                place_name, 
+                                address, 
+                                api_content_id, 
+                                api_created_at, 
+                                api_updated_at,
+                                detail_address,
+                                use_time,
+                                check_in_time,
+                                check_out_time,
+                                homepage,
+                                phone_number,
+                                longitude, 
+                                latitude, 
+                                description,
+                                created_at
+                            ) 
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now())
+                        '''
 
         self.cursor.execute(insert_travel_place, (
             travel_place.location.country_id, 
             travel_place.location.city_id, 
             travel_place.location.district_id, 
             travel_place.category_code, 
-            travel_place.content_type_id, 
+            travel_place.content_type_id,
             travel_place.place_name, 
-            travel_place.address, 
-            travel_place.detail_address, 
-            travel_place.longitude, 
-            travel_place.latitude, 
+            travel_place.address,
             travel_place.api_content_id, 
             travel_place.api_created_at, 
-            travel_place.api_updated_at
+            travel_place.api_updated_at,
+            travel_place.detail_address,
+            travel_place.use_time,
+            travel_place.check_in_time,
+            travel_place.check_out_time,
+            travel_place.homepage,
+            travel_place.phone_number,
+            travel_place.longitude, 
+            travel_place.latitude,
+            travel_place.description
         ))
         
         self.conn.commit()

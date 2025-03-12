@@ -44,7 +44,8 @@ def build_detail_params():
         'MobileOS': MOBILE_OS,
         'MobileApp': MOBILE_APP,
         '_type': RESPONSE_TYPE,
-        'overviewYN': 'Y'
+        'overviewYN': 'Y',
+        'defaultYN': 'Y'
     }
 
 

@@ -112,4 +112,4 @@ def save_travel_image(db, s3, district_id, place_id, image_url, is_thumbnail):
 
         db.execute_insert(insert_travel_image, (place_id, object_url, original_name, file_name, 'jpg', file_size, is_thumbnail, image_url))
        
-        logger.info('save_travel_image() - db, s3 이미지 데이터 저장 완료')
+        logger.info(f'save_travel_image() - db, s3 이미지 데이터 저장 완료(썸네일 여부 : {is_thumbnail})')
