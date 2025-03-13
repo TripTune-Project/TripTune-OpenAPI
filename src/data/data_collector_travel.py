@@ -162,7 +162,6 @@ def limited_korea_travel_places(db, s3, city, district, target_content_name, tar
     url = BASE_URL + '/areaBasedList1'
     params = build_params()
 
-
     # 지역 조회
     korea_area = db.select_area_one('대한민국', city, district)
 
@@ -176,6 +175,7 @@ def limited_korea_travel_places(db, s3, city, district, target_content_name, tar
 
     location = Location(korea_area['country_id'], korea_area['city_id'], korea_area['district_id'])
     
+    count = 0
 
     params['contentTypeId'] = content_type['api_content_type_id']
     params['areaCode'] = korea_area['api_area_code']
@@ -188,7 +188,7 @@ def limited_korea_travel_places(db, s3, city, district, target_content_name, tar
         count = save_limited_travel_places(db, s3, url, params, total_count, location, content_type, target_count)
 
     logger.info('======================================================================')
-    logger.info(f'limited_korea_travel_places() - {city} 지역 총 {count}개 데이터 저장 완료')
+    logger.info(f'limited_korea_travel_places() - {city} {district} 지역 총 {count}개 데이터 저장 완료')
 
 
 
@@ -199,7 +199,7 @@ def save_limited_travel_places(db, s3, url, params, total_count, location, conte
     items = fetch_items(url, params, total_count)
 
     for item in items:
-        if not db.execute_exist_travel_place(item['contentid']) and count <= target_count:
+        if not db.execute_exist_travel_place(item['contentid']) and count < target_count:
             
             # 관광지 소개 정보 함수 호출
             details = korea_travel_place_detail(item['contentid'])
