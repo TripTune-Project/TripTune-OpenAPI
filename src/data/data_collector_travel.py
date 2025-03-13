@@ -49,9 +49,9 @@ def korea_travel_places(db, s3):
             total_count = get_total_count(url, params)
 
             if total_count != 0:
-                count = save_travel_places(db, s3, url, params, total_count, location, content_type, count)
+                count = save_all_travel_places(db, s3, url, params, total_count, location, content_type)
 
-        logger.info(f'{korea_area["city_name"]} 지역 {total_count}개 데이터 저장 완료')
+    logger.info('======================================================================')
     logger.info(f'korea_travel_places() - 관광지 {count}개 데이터 저장 완료')
 
 
@@ -80,8 +80,6 @@ def specific_korea_travel_places(db, s3, city, district):
 
     location = Location(korea_area['country_id'], korea_area['city_id'], korea_area['district_id'])
 
-    # 총 저장된 데이터 갯수 확인하기 위한 변수
-    count = 0
 
     for content_type in content_types:
         params['contentTypeId'] = content_type['api_content_type_id']
@@ -91,59 +89,17 @@ def specific_korea_travel_places(db, s3, city, district):
         total_count = get_total_count(url, params)
 
         if total_count != 0:
-            count = save_travel_places(db, s3, url, params, total_count, location, content_type, count)
+            count = save_all_travel_places(db, s3, url, params, total_count, location, content_type)
                 
-        logger.info(f'{city} 지역 {total_count}개 데이터 저장 완료')
+    logger.info('======================================================================')
     logger.info(f'specific_korea_travel_places() - 관광지 {count}개 데이터 저장 완료')
 
 
-def limited_korea_travel_places(db, s3, city, district, target_content_name, target_count):
-    '''
-    파라미터로 전달된 지역 정보와 DB에 저장된 컨텐츠 타입을 이용해 특정 지역의 관광지를 조회하고 저장한다.
-    관광지 정보, 해당 관광지에 대한 소개 정보, 썸네일 이미지 등을 저장하는 기능을 한다.
-    이미지 파일의 경우 S3에 이미지 파일로 저장된다.
-    저장 위치: travel_place
 
-    *if문을 추가해 저장되는 데이터 갯수를 제한했다.
-    
-    '''
-    url = BASE_URL + '/areaBasedList1'
-    params = build_params()
-
-
-    # 지역 조회
-    korea_area = db.select_area_one('대한민국', city, district)
-
-    if not korea_area:
-        logger.error(f'지역 정보가 존재하지 않습니다 - {city}, {district}')
-        return
-
-
-    # 컨텐츠 타입 조회
-    content_type = db.execute_select_one('SELECT * FROM api_content_type WHERE content_type_name = %s', target_content_name)
-
-    location = Location(korea_area['country_id'], korea_area['city_id'], korea_area['district_id'])
-    
-
+def save_all_travel_places(db, s3, url, params, total_count, location, content_type):
     # 총 저장된 데이터 갯수 확인하기 위한 변수
     count = 0
 
-    params['contentTypeId'] = content_type['api_content_type_id']
-    params['areaCode'] = korea_area['api_area_code']
-    params['sigunguCode'] = korea_area['api_sigungu_code']
-
-    total_count = get_total_count(url, params)
-    logger.info(f'총 데이터 갯수(total_count) - {total_count} 개')
-
-    if total_count != 0 and count <= target_count:
-        count = save_travel_places(db, s3, url, params, total_count, location, content_type, count)
-        
-    logger.info(f'{city} 지역 {total_count}개 데이터 저장 완료')
-    logger.info(f'limited_korea_travel_places() - 관광지 {count}개 데이터 저장 완료')
-
-
-
-def save_travel_places(db, s3, url, params, total_count, location, content_type, count):
     items = fetch_items(url, params, total_count)
 
     for item in items:
@@ -186,6 +142,105 @@ def save_travel_places(db, s3, url, params, total_count, location, content_type,
             # 관광지 이미지 저장 함수 호출
             limited_korea_travel_detail_image(db, s3, travel_place.api_content_id)
             count += 1
+        
+        logger.info('-------------------------------------------------------------------')
+        logger.info(f'{count} 개 데이터 저장 완료')
+    
+    return count
+
+
+def limited_korea_travel_places(db, s3, city, district, target_content_name, target_count):
+    '''
+    파라미터로 전달된 지역 정보와 DB에 저장된 컨텐츠 타입을 이용해 특정 지역의 관광지를 조회하고 저장한다.
+    관광지 정보, 해당 관광지에 대한 소개 정보, 썸네일 이미지 등을 저장하는 기능을 한다.
+    이미지 파일의 경우 S3에 이미지 파일로 저장된다.
+    저장 위치: travel_place
+
+    *if문을 추가해 저장되는 데이터 갯수를 제한했다.
+    
+    '''
+    url = BASE_URL + '/areaBasedList1'
+    params = build_params()
+
+
+    # 지역 조회
+    korea_area = db.select_area_one('대한민국', city, district)
+
+    if not korea_area:
+        logger.error(f'지역 정보가 존재하지 않습니다 - {city}, {district}')
+        return
+
+
+    # 컨텐츠 타입 조회
+    content_type = db.execute_select_one('SELECT * FROM api_content_type WHERE content_type_name = %s', target_content_name)
+
+    location = Location(korea_area['country_id'], korea_area['city_id'], korea_area['district_id'])
+    
+
+    params['contentTypeId'] = content_type['api_content_type_id']
+    params['areaCode'] = korea_area['api_area_code']
+    params['sigunguCode'] = korea_area['api_sigungu_code']
+
+    total_count = get_total_count(url, params)
+    logger.info(f'총 데이터 갯수(total_count) - {total_count} 개')
+
+    if total_count != 0:
+        count = save_limited_travel_places(db, s3, url, params, total_count, location, content_type, target_count)
+
+    logger.info('======================================================================')
+    logger.info(f'limited_korea_travel_places() - {city} 지역 총 {count}개 데이터 저장 완료')
+
+
+
+def save_limited_travel_places(db, s3, url, params, total_count, location, content_type, target_count):
+    # 총 저장된 데이터 갯수 확인하기 위한 변수
+    count = 0
+
+    items = fetch_items(url, params, total_count)
+
+    for item in items:
+        if not db.execute_exist_travel_place(item['contentid']) and count <= target_count:
+            
+            # 관광지 소개 정보 함수 호출
+            details = korea_travel_place_detail(item['contentid'])
+
+            # 관광지 기본 정보 함수 호출
+            info = korea_travel_place_info(content_type['api_content_type_id'], item['contentid'])
+    
+            travel_place = TravelPlace(
+                location=location,
+                category_code=item['cat3'],
+                content_type_id=content_type['content_type_id'],
+                place_name=item['title'],
+                address=item['addr1'],
+                api_content_id=item['contentid'],
+                api_created_at=convert_to_datetime(item['createdtime']),
+                api_updated_at=convert_to_datetime(item['modifiedtime']),
+                detail_address=item['addr2'] if item['addr2'] != '' else None,
+                use_time=info['use_time'],
+                check_in_time=info['check_in_time'],
+                check_out_time=info['check_out_time'],
+                homepage=details['homepage'],
+                phone_number=info['phone_number'],
+                longitude=item['mapx'],
+                latitude=item['mapy'],
+                description=details['description']
+            )
+
+            db.insert_travel_place(travel_place)
+            place_id = db.execute_last_inserted_id()
+
+
+            # 관광지 썸네일 이미지 저장 함수 호출
+            if item['firstimage'] != '':
+                save_travel_image(db, s3, location.district_id, place_id, item['firstimage'], True)
+
+            # 관광지 이미지 저장 함수 호출
+            limited_korea_travel_detail_image(db, s3, travel_place.api_content_id)
+            count += 1
+        
+        logger.info('-------------------------------------------------------------------')
+        logger.info(f'{count} 개 데이터 저장 완료')
     
     return count
 
@@ -273,7 +328,7 @@ def korea_travel_place_info(api_content_type_id, api_content_id):
                 info['use_time'] = item['opentimefood'] if item['opentimefood'] != '' else None 
    
 
-        logger.info(f'korea_travel_place_info() - {api_content_id} 관광지 전화번호, 이용시간 데이터 저장 완료')
+        logger.info(f'korea_travel_place_info() - {api_content_id} 관광지 전화번호, 이용시간 데이터 조회 완료')
         return info
 
 

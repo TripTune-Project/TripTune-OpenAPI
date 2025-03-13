@@ -39,7 +39,8 @@ def main():
         # korea_category2_code(db)
         # korea_category3_code(db)
 
-        limited_korea_travel_places(db, s3, '부산', '강서구', '관광지', 20)
+        limited_korea_travel_places(db, s3, '부산', '기장군', '레포츠', 20)
+
     finally:
         db.close()
 
