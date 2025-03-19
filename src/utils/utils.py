@@ -42,10 +42,7 @@ def download_and_compress_image(image_url, quality):
     response = requests.get(image_url)
     
     if response.status_code == 200:
-        img = Image.open(BytesIO(response.content))
-
-        if img.mode == 'RGBA':
-            img = img.convert('RGB')
+        img = Image.open(BytesIO(response.content)).convert('RGB')
 
         # 메모리 내에 BytesIO 객체에 이미지 저장
         img_byte_arr = BytesIO()

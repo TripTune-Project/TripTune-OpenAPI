@@ -39,7 +39,7 @@ def main():
         # korea_category2_code(db)
         # korea_category3_code(db)
 
-        limited_korea_travel_places(db, s3, '서울', '노원구', '문화시설', 20)
+        limited_korea_travel_places(db, s3, '세종특별자치시', '세종특별자치시', '관광지', 30)
 
     finally:
         db.close()
