@@ -91,9 +91,9 @@ def save_travel_image(db, s3, district_id, place_id, image_url, is_thumbnail):
     '''
     if image_url is not None:
         if is_thumbnail:
-            file_name = datetime.now().strftime('%y%m%d%H%M%S') + '_tourapi_firstimage_' + uuid.uuid4().hex[:8] + '.jpg'
+            file_name = datetime.now().strftime('%y%m%d%H%M%S') + '_' + str(place_id) + '_firstimage_' + uuid.uuid4().hex[:8] + '.jpg'
         else:
-            file_name = datetime.now().strftime('%y%m%d%H%M%S') + '_tourapi_secondimage_' + uuid.uuid4().hex[:8] + '.jpg'
+            file_name = datetime.now().strftime('%y%m%d%H%M%S') + '_' + str(place_id) + '_secondimage_' + uuid.uuid4().hex[:8] + '.jpg'
 
         
         original_name = image_url.split('/')[-1]

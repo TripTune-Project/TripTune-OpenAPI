@@ -188,7 +188,7 @@ def limited_korea_travel_places(db, s3, city, district, target_content_name, tar
         count = save_limited_travel_places(db, s3, url, params, total_count, location, content_type, target_count)
 
     logger.info('======================================================================')
-    logger.info(f'limited_korea_travel_places() - {city} {district} 지역 총 {count}개 데이터 저장 완료')
+    logger.info(f'limited_korea_travel_places() - [{city} {district} {target_content_name}] 총 {total_count}개 데이터 중 {count}개 저장 완료')
 
 
 
