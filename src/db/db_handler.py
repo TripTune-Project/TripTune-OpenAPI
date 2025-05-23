@@ -146,7 +146,7 @@ class DatabaseHandler:
                                 is_thumbnail, 
                                 api_file_url
                             )
-                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         '''
 
         self.cursor.execute(insert_travel_image, (

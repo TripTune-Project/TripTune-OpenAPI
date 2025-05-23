@@ -40,7 +40,7 @@ def main():
         # korea_category2_code(db)
         # korea_category3_code(db)
 
-        # limited_korea_travel_places(db, s3, '강원특별자치도', '인제군', '숙박', 30)
+        # limited_korea_travel_places(db, s3, '강원특별자치도', '정선군', '쇼핑', 30)
         delete_ambiguous_description_data(db, s3)
 
     finally:

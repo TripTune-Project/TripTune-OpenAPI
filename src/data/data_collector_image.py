@@ -119,7 +119,7 @@ def save_travel_image(db, s3, district_id, place_id, image_url, is_thumbnail):
             file_name,
             'jpg',
             file_size,
-            datetime.now,
+            datetime.now(),
             is_thumbnail,
             image_url
         )

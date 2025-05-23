@@ -1,6 +1,3 @@
-import os
-import uuid
-import datetime
 from .data_collector_image import *
 from api.api_handler import *
 from utils.utils import *
@@ -9,7 +6,6 @@ from utils.config import *
 from db.db_handler import DatabaseHandler
 from model.travel_place import TravelPlace
 from model.location import Location
-from aws import S3Handler
 
 
 logger = setup_logger()
@@ -107,6 +103,8 @@ def save_all_travel_places(db, s3, url, params, total_count, location, content_t
             
             # 관광지 소개 정보 함수 호출
             details = korea_travel_place_detail(item['contentid'])
+            if details['description'] is None:
+                continue
 
             # 관광지 기본 정보 함수 호출
             info = korea_travel_place_info(content_type['api_content_type_id'], item['contentid'])
@@ -204,6 +202,9 @@ def save_limited_travel_places(db, s3, url, params, total_count, location, conte
             # 관광지 소개 정보 함수 호출
             details = korea_travel_place_detail(item['contentid'])
 
+            if details['description'] is None:
+                continue
+
             # 관광지 기본 정보 함수 호출
             info = korea_travel_place_info(content_type['api_content_type_id'], item['contentid'])
     
@@ -258,28 +259,31 @@ def korea_travel_place_detail(api_content_id):
     params['contentId'] = api_content_id
     total_count = get_total_count(url, params)
 
-    if total_count != 0:
-        items = fetch_items(url, params, total_count)
+    details = {'description': None, 'homepage': None}
 
-        for item in items:
-            details = {
-                'description': None, 
-                'homepage': None
-            }
-
-            if item['overview'] != '' or item['overview'] != '-':
-                details['description'] = item['overview']
-
-            if item['homepage'] != '' or item['homepage'] != '-':
-                start_index = item['homepage'].find('<a ')
-
-                if start_index != -1:
-                    details['homepage'] = item['homepage'][start_index:]
-        
-        logger.info(f'korea_travel_place_detail() - {api_content_id} 관광지 설명 데이터 조회 완료')
+    if total_count == 0:
         return details
 
-                
+    items = fetch_items(url, params, total_count)
+
+    for item in items:
+        description = item['overview'].strip()
+
+        if description in ['', '-']:
+            return details
+        
+        details['description'] = description
+
+        homepage = item['homepage'].strip()
+       
+        if homepage not in ['', '-']:
+            start_index = homepage.find('<a ')
+            if start_index != -1:
+                details['homepage'] = homepage[start_index:]
+
+    logger.info(f'korea_travel_place_detail() - {api_content_id} 관광지 설명 데이터 조회 완료')
+    return details
+
 
 def korea_travel_place_info(api_content_type_id, api_content_id):
     '''

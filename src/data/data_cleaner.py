@@ -10,11 +10,14 @@ def delete_ambiguous_description_data(db, s3):
         FROM travel_place tp
         JOIN travel_image ti
         ON tp.place_id = ti.place_id
-        WHERE tp.description='-'
+        WHERE tp.description = '-'
         OR tp.description IS NULL
+        OR tp.description = ''
     '''
 
     shopping_places = db.execute_select_all(query)
+
+    logger.info(f'{len(shopping_places)} 개 데이터 조회 완료')
 
     for place in shopping_places:
         place_id = place['place_id']
@@ -35,5 +38,7 @@ def delete_ambiguous_description_data(db, s3):
                 'DELETE FROM travel_place WHERE place_id = %s'
                 , (place_id,)
             )
+
+            logger.info(f'{place['place_name']} 여행지 데이터 삭제 완료')
         except Exception as e:
             logger.error(f'삭제 중 오류 발생 (place_id={place_id}): {e}')

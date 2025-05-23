@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 from datetime import datetime
-from model import *
+from model.location import *
 
 @dataclass
 class TravelPlace:
@@ -17,10 +17,10 @@ class TravelPlace:
     use_time: Optional[str] = None
     check_in_time: Optional[str] = None
     check_out_time: Optional[str] = None
-    homepage : Optional[str] = None
+    homepage: Optional[str] = None
     phone_number: Optional[str] = None
-    longitude = Optional[float] = None
-    latitude = Optional[float] = None
+    longitude: Optional[float] = None
+    latitude: Optional[float] = None
     description: Optional[str] = None
 
 
