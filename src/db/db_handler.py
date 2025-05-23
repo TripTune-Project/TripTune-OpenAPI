@@ -130,6 +130,39 @@ class DatabaseHandler:
 
         self.conn.commit()
                 
+    
+
+    def insert_travel_image(self, travel_image):
+        insert_travel_image = '''
+                            INSERT INTO travel_image(
+                                place_id, 
+                                s3_object_url, 
+                                s3_object_key,
+                                original_name, 
+                                file_name, 
+                                file_type, 
+                                file_size, 
+                                created_at, 
+                                is_thumbnail, 
+                                api_file_url
+                            )
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        '''
+
+        self.cursor.execute(insert_travel_image, (
+            travel_image.place_id,
+            travel_image.s3_object_url,
+            travel_image.s3_object_key,
+            travel_image.original_name, 
+            travel_image.file_name, 
+            travel_image.file_type, 
+            travel_image.file_size, 
+            travel_image.created_at, 
+            travel_image.is_thumbnail, 
+            travel_image.api_file_url
+        ))
+        
+        self.conn.commit()
 
     def execute_update(self, query, params):
         self.cursor.execute(query, params)

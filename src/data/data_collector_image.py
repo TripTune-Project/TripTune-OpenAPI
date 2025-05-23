@@ -7,6 +7,8 @@ from utils.config import *
 from utils.log_handler import setup_logger
 from db.db_handler import DatabaseHandler
 from aws import S3Handler
+from model import *
+from urllib.parse import urlparse
 
 
 def korea_travel_detail_image(db, s3):
@@ -24,11 +26,11 @@ def korea_travel_detail_image(db, s3):
     travel_places = db.execute_select_all(select_place)
 
     if not travel_places:
-        logger.error(f'여행지 정보가 존재하지 않습니다 - {korea_area}')
+        logger.error(f'여행지 정보가 존재하지 않습니다')
         return
 
-    for travel in travel_places:
-        params['contentId'] = travel['api_content_id']
+    for place in travel_places:
+        params['contentId'] = place['api_content_id']
 
         total_count = get_total_count(url, params)
         items = []
@@ -105,11 +107,32 @@ def save_travel_image(db, s3, district_id, place_id, image_url, is_thumbnail):
         
         # s3 이미지 저장
         object_url = s3.upload_file(compressed_image, file_path)
+        object_key = extract_s3_key(object_url)
+
 
         # db 이미지 데이터 저장
-        insert_travel_image = '''INSERT INTO travel_image(place_id, s3_object_url, original_name, file_name, file_type, file_size, created_at, is_thumbnail, api_file_url)
-                                VALUES (%s, %s, %s, %s, %s, %s, now(), %s, %s)'''
+        travel_image = TravelImage(
+            place_id,
+            object_url,
+            object_key,
+            original_name,
+            file_name,
+            'jpg',
+            file_size,
+            datetime.now,
+            is_thumbnail,
+            image_url
+        )
 
-        db.execute_insert(insert_travel_image, (place_id, object_url, original_name, file_name, 'jpg', file_size, is_thumbnail, image_url))
+        db.insert_travel_image(travel_image)
        
         logger.info(f'save_travel_image() - db, s3 이미지 데이터 저장 완료(썸네일 여부 : {is_thumbnail})')
+
+
+def extract_s3_key(url: str) -> str:
+    '''
+    s3 객체 url 에서 key 추출 함수
+
+    '''
+    parsed = urlparse(url)
+    return parsed.path.lstrip('/')
