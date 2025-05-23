@@ -138,6 +138,12 @@ class DatabaseHandler:
     def execute_last_inserted_id(self):
         return self.cursor.lastrowid
     
+
+    def execute_delete(self, query, params):
+        self.cursor.execute(query, params)
+        self.conn.commit()
+
+
     def close(self):
         self.conn.close()
     

@@ -37,4 +37,14 @@ class S3Handler:
             logger.info(f'{self.bucket_name}의 전체 데이터 삭제 완료')
         except Exception as e:
             logger.error('삭제 실패 : ', e)
-        
+
+    def delete_object(self, object_key):
+        try:
+            response = self.s3.delete_object(
+                Bucket=self.bucket_name,
+                Key=object_key
+            )
+            logger.info(f'{object_key} 삭제 완료: {response}')
+        except Exception as e:
+            logger.error(f'{object_key} 삭제 실패: {e}')
+            

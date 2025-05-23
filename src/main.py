@@ -5,6 +5,7 @@ from data.data_collector_image import *
 from data.data_collector_area import *
 from data.data_collector_category import *
 from data.data_collector_travel import *
+from data.data_cleaner import *
 from aws.s3_handler import *
 
 
@@ -39,7 +40,8 @@ def main():
         # korea_category2_code(db)
         # korea_category3_code(db)
 
-        limited_korea_travel_places(db, s3, '인천', '중구', '숙박', 30)
+        # limited_korea_travel_places(db, s3, '강원특별자치도', '인제군', '숙박', 30)
+        delete_ambiguous_description_data(db, s3)
 
     finally:
         db.close()
