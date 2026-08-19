@@ -1,4 +1,3 @@
-import sys
 import urllib.parse
 import requests
 import xml.etree.ElementTree as ET
@@ -126,7 +125,7 @@ def get_json_data(url : str, params : dict):
             f"URL : {url}\n"
             f"Params : {encoding_params}"
         )
-        sys.exit(1)
+        raise
 
     content_type = response.headers.get('Content-Type', '')
 
@@ -138,7 +137,9 @@ def get_json_data(url : str, params : dict):
             f"요청 URL : {response.request.url}\n"
             f"응답 내용 :\n{response.text}"
         )
-        sys.exit(1)
+        raise RuntimeError(
+            f"API 요청 실패: status_code={response.status_code}"
+        )
 
     if 'application/json' in content_type:
         try:
@@ -151,7 +152,7 @@ def get_json_data(url : str, params : dict):
                 f"에러 : {e}\n"
                 f"응답 내용 :\n{response.text}"
             )
-            sys.exit(1)
+            raise
 
         if 'response' in data and 'body' in data['response']:
             return data
@@ -162,14 +163,16 @@ def get_json_data(url : str, params : dict):
                 f"에러 코드 : {data["resultCode"]}\n"
                 f"에러 메시지 : {data["resultMsg"]}"
             )
-            sys.exit(1)
+            raise RuntimeError(
+                f"API 오류: {data['resultCode']} - {data['resultMsg']}"
+            )
 
         logger.error(
             f"get_json_data() - 예상하지 못한 JSON 응답\n"
             f"요청 URL : {response.request.url}\n"
             f"응답 데이터 : {data}"
         )
-        sys.exit(1)
+        raise RuntimeError("예상하지 못한 JSON 응답")
 
 
     if 'application/xml' in content_type or 'text/xml' in content_type:
@@ -184,7 +187,9 @@ def get_json_data(url : str, params : dict):
                 f"에러 코드 : {reason_code}\n"
                 f"에러 메시지 : {auth_msg}"
             )
-            sys.exit(1)
+            raise RuntimeError(
+                f"API 오류(XML): {reason_code} - {auth_msg}"
+            )
 
         except ET.ParseError as e:
             logger.error(
@@ -192,13 +197,13 @@ def get_json_data(url : str, params : dict):
                 f"에러 : {e}\n"
                 f"응답 내용 :\n{response.text}"
             )
-            sys.exit(1)
+            raise
 
     logger.error(
         f"get_json_data() - 지원하지 않는 응답 형식\n"
         f"컨텐츠 타입 : {content_type}\n"
         f"응답 내용 :\n{response.text}"
     )
-    sys.exit(1)
+    raise
 
 

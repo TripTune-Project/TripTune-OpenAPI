@@ -28,6 +28,7 @@ class S3Handler:
             logger.info("[CONNECT] s3 bucket 연결 완료!")
         except Exception:
             logger.exception(f"[ERROR] s3 연결 실패")
+            raise
             
     def upload_file(self, image_byte_arr : BytesIO, s3_object_key : str):
         try:
@@ -39,6 +40,7 @@ class S3Handler:
             logger.info(f"[UPLOAD] {s3_object_key} 업로드 완료")
         except Exception:
             logger.exception(f"[ERROR] {s3_object_key} 업로드 실패")
+            raise
 
 
     def delete_object(self, s3_object_key : str):
@@ -51,6 +53,7 @@ class S3Handler:
             logger.info(f"[DELETE] {s3_object_key} 삭제 완료")
         except Exception:
             logger.exception(f"[ERROR] {s3_object_key} 삭제 실패")
+            raise
             
     
     def delete_objects_by_district(self, district_id : int):
@@ -63,6 +66,7 @@ class S3Handler:
             logger.info(f"[DELETE] {prefix} 이미지 삭제 완료")
         except Exception:
             logger.exception(f"[ERROR] {prefix} 이미지 삭제 실패")
+            raise
 
 
     def delete_all_objects(self):
@@ -73,3 +77,4 @@ class S3Handler:
             logger.info(f"[DELETE] {self.bucket_name}의 전체 데이터 삭제 완료")
         except Exception:
             logger.exception(f"[ERROR] 전체 이미지 삭제 실패")
+            raise
