@@ -1,12 +1,12 @@
 # TripTune - OpenAPI
 
-TripTune-OpenAPI는 공공 데이터 포털에서 제공하는 한국관광공사의 Tour API를 
-활용하여 여행지 및 지역 데이터를 수집, 가공하고 TripTune 서비스에서 활용할 수 있도록
-데이터를 구축하는 프로젝트입니다.
+TripTune-OpenAPI는 공공 데이터 포털의 한국관광공사 Tour API를 활용하여 여행지 및 지역 데이터를 수집·가공하고<br/>
+TripTune 서비스에 필요한 데이터베이스를 구축하는 프로젝트입니다.
+
 ---
 ## 🛠 기술 스택
 - **Language**: Python 3.12
-- **API**: 공공 데이터 포털의 한국관광공사의 Tour API https://www.data.go.kr/data/15101578/openapi.do
+- **API**: [공공 데이터 포털 - 한국관광공사 Tour API](https://www.data.go.kr/data/15101578/openapi.do) 
 - **Database**: MySQL
 - **Infra**: AWS EC2, AWS S3
 - **Library** : 
@@ -51,11 +51,11 @@ TripTune-Open-API
 │   │   ├── travel_image.py                 # 여행지 이미지 모델
 │   │   └── travel_place.py                 # 여행지 모델
 │   ├── utils/
-│   │   ├── api_config.py                       # 공공 데이터 포털 API 요청 설정             
+│   │   ├── api_config.py                   # 공공 데이터 포털 API 요청 설정             
 │   │   ├── log_handler.py                  # 로그 관리
 │   │   └── utils.py                        # 날짜, 이미지 및 여행지 이용시간 데이터 정제
 │   └── main.py                             # 프로젝트 실행
-└── requirements.txt                         # 패키지 의존성 관리
+└── requirements.txt                        # 패키지 의존성 관리
 ```
 
 ---
