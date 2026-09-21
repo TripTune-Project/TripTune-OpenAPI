@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from api.api_handler import logger, fetch_first_page_api_items
 from utils.utils import download_and_compress_image
-from utils.config import BASE_URL, build_image_params
+from utils.api_config import BASE_URL, build_image_params
 from db.db_handler import DatabaseHandler
 from db import travel_image_db
 from aws.s3_handler import S3Handler

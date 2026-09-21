@@ -118,7 +118,12 @@ def get_json_data(url : str, params : dict):
 
 
     try:
-        response = requests.get(url, params=encoding_params)
+        response = requests.get(
+            url,
+            params=encoding_params,
+            timeout=30
+        )
+
     except requests.exceptions.RequestException:
         logger.exception(
             f"get_json_data() - API 요청 중 예외 발생\n"

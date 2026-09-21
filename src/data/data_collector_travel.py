@@ -3,7 +3,7 @@ from math import ceil
 
 from api.api_handler import fetch_page_api_items, fetch_first_page_api_items
 from aws.s3_handler import S3Handler
-from utils.config import BASE_URL, build_params, build_detail_params, NUM_OF_ROWS
+from utils.api_config import BASE_URL, build_params, build_detail_params, NUM_OF_ROWS
 from utils.log_handler import setup_logger
 from db.db_handler import DatabaseHandler
 from model.travel_place import TravelPlace
